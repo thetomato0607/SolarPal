@@ -1,4 +1,3 @@
-// src/App.jsx
 import { useEffect, useState } from "react";
 import Onboarding from "./components/Onboarding";
 import Dashboard from "./components/Dashboard";
@@ -8,7 +7,6 @@ export default function App() {
   const [appStage, setAppStage] = useState("onboarding"); // 'onboarding' | 'dashboard'
   const [dashboardData, setDashboardData] = useState(null);
 
-  // Optional: restore from localStorage on first load
   useEffect(() => {
     const saved = loadState();
     if (saved?.appStage && saved?.dashboardData) {
@@ -17,7 +15,6 @@ export default function App() {
     }
   }, []);
 
-  // Persist when things change (optional)
   useEffect(() => {
     saveState({ appStage, dashboardData });
   }, [appStage, dashboardData]);

@@ -1,29 +1,24 @@
-// src/components/Onboarding.jsx
 import { useState } from "react";
-import { fetchSummary } from "../services/solarApi.js";
+import { fetchSummary } from "../services/solarApi";
+import Card from "./ui/Card";
+import Button from "./ui/Button";
+import CloudBackground from "./CloudBackground";
 
 export default function Onboarding({ onSuccess }) {
   const [form, setForm] = useState({ location: "", systemSize: 5 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const onChange = (e) =>
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    // Simple validation
-    if (!form.location) {
-      setError("Please enter your location.");
-      return;
-    }
-
+    if (!form.location?.trim()) { setError("Please enter your location."); return; }
     setLoading(true);
     try {
-      const data = await fetchSummary(form); // ← calls backend
-      onSuccess(data); // ← tells App to go to Dashboard
+      const data = await fetchSummary(form);
+      onSuccess(data);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -32,36 +27,51 @@ export default function Onboarding({ onSuccess }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ padding: 16 }}>
-      <h1>SolarPal Onboarding</h1>
+    <CloudBackground>
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "64px 16px" }}>
+        <h1 style={{ fontSize: 28, marginBottom: 16 }}>SolarPal Onboarding</h1>
+        <Card>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 14 }}>
+              <label>Location</label>
+              <input
+                name="location"
+                value={form.location}
+                onChange={onChange}
+                placeholder="e.g. Sydney, AU or -33.87,151.21"
+                style={{
+                  display: "block", width: "100%", padding: 12, marginTop: 6,
+                  borderRadius: 12, border: "1px solid #d7e2eb", outline: "none"
+                }}
+              />
+            </div>
 
-      <label>
-        Location
-        <input
-          name="location"
-          value={form.location}
-          onChange={onChange}
-          placeholder="e.g. Sydney, AU or -33.87,151.21"
-        />
-      </label>
+            <div style={{ marginBottom: 8 }}>
+              <label>System Size (kW)</label>
+              <input
+                name="systemSize"
+                type="number"
+                min="1"
+                step="0.1"
+                value={form.systemSize}
+                onChange={onChange}
+                style={{
+                  display: "block", width: "100%", padding: 12, marginTop: 6,
+                  borderRadius: 12, border: "1px solid #d7e2eb", outline: "none"
+                }}
+              />
+            </div>
 
-      <label>
-        System Size (kW)
-        <input
-          name="systemSize"
-          type="number"
-          min="1"
-          step="0.1"
-          value={form.systemSize}
-          onChange={onChange}
-        />
-      </label>
+            {error && <p style={{ color: "#b00020", marginTop: 8 }}>{error}</p>}
 
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
-
-      <button type="submit" disabled={loading}>
-        {loading ? "Loading..." : "Continue"}
-      </button>
-    </form>
+            <div style={{ marginTop: 16 }}>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Loading…" : "Continue"}
+              </Button>
+            </div>
+          </form>
+        </Card>
+      </div>
+    </CloudBackground>
   );
 }

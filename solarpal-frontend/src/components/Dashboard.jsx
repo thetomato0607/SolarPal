@@ -1,33 +1,30 @@
-// src/components/Dashboard.jsx
 import { useEffect } from "react";
+import CloudBackground from "./CloudBackground";
+import Header from "./Header";
+import SummaryCard from "./dashboard/SummaryCard";
+import TipCard from "./dashboard/TipCard";
+import WeeklyEnergyChart from "./charts/WeeklyEnergyChart";
+import PremiumTeaser from "./dashboard/PremiumTeaser";
 
 export default function Dashboard({ data, onReset }) {
-  // Guard: if no data, go back
-  useEffect(() => {
-    if (!data) {
-      onReset();
-    }
-  }, [data, onReset]);
+  useEffect(() => { if (!data) onReset(); }, [data, onReset]);
+  if (!data) return null;
 
-  if (!data) return null; // brief empty render during redirect
+  const summary = data.summary ?? data;
+  const isPremium = false; // TODO: replace with real auth/subscription
 
   return (
-    <div style={{ padding: 16 }}>
-      <h1>Dashboard</h1>
+    <CloudBackground>
+      <Header onReset={onReset} />
+      <main style={{ maxWidth: 980, margin: "12px auto 40px", padding: "0 16px" }}>
+        <h1 style={{ fontSize: 28, marginBottom: 8 }}>Dashboard</h1>
 
-      <section>
-        <h2>Summary</h2>
-        <pre>{JSON.stringify(data.summary ?? data, null, 2)}</pre>
-      </section>
+        <SummaryCard summary={summary} />
+        <TipCard tip={data.tip} />
+        <WeeklyEnergyChart summary={summary} />
 
-      {data.tip && (
-        <section>
-          <h3>Tip</h3>
-          <p>{data.tip}</p>
-        </section>
-      )}
-
-      <button onClick={onReset}>Reset</button>
-    </div>
+        {!isPremium && <PremiumTeaser />}
+      </main>
+    </CloudBackground>
   );
 }

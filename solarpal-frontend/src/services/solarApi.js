@@ -1,12 +1,9 @@
-// src/services/solarApi.js
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: import.meta?.env?.VITE_API_BASE_URL || process.env.REACT_APP_API_BASE_URL || "http://localhost:8000", // adjust if needed
-  timeout: 15000,
-});
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
-// OPTIONAL: axios error normalization
+const api = axios.create({ baseURL, timeout: 15000 });
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
@@ -19,12 +16,10 @@ api.interceptors.response.use(
   }
 );
 
-// Adjust endpoint to your FastAPI route
 export async function fetchSummary({ location, systemSize }) {
-  // You can convert "location" to lat/lon in backend or send as-is.
-  // Example: GET /summary?location=...&system_size=...
   const res = await api.get("/summary", {
     params: { location, system_size: systemSize },
   });
-  return res.data; // should be the "dashboardData"
+  return res.data;
 }
+

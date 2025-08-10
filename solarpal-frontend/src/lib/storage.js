@@ -1,4 +1,3 @@
-// src/lib/storage.js
 const KEY = "solarpal_state_v1";
 
 export function loadState() {
