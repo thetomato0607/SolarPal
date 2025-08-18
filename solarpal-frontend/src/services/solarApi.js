@@ -1,4 +1,3 @@
-// src/services/solarApi.js
 import axios from "axios";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
@@ -25,7 +24,7 @@ export async function fetchSummary({ location, systemSize }) {
   return res.data;
 }
 
-// Used by Dashboard (solar forecast)
+// Used by Dashboard – solar forecast for charts / future use
 export async function fetchForecast({ location, systemSize }) {
   const res = await api.get("/forecast", {
     params: { location, system_size: systemSize },
@@ -33,7 +32,7 @@ export async function fetchForecast({ location, systemSize }) {
   return res.data;
 }
 
-// Used by Dashboard 3D scene (live weather by coordinates)
+// Used by 3D weather scene – live weather by coordinates
 export async function getWeather(lat, lon) {
   const res = await api.get("/weather", { params: { lat, lon } });
   return res.data;
