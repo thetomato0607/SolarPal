@@ -2,21 +2,21 @@
 import { useEffect, useState } from "react";
 
 // services
-import { fetchForecast, getWeather } from "../services/solarApi";
+import { fetchForecast, getWeather } from "../../services/solarApi";
 
 // layout / ui
-import CloudBackground from "./CloudBackground";
-import Header from "./Header";
-import Card from "./ui/Card";
+import CloudBackground from "../CloudBackground";
+import Header from "../Header";
+import Card from "../ui/Card";
 
 // dashboard pieces
-import SummaryCard from "./dashboard/SummaryCard";
-import TipCard from "./dashboard/TipCard";
-import WeeklyEnergyChart from "./charts/WeeklyEnergyChart";
-import PremiumTeaser from "./dashboard/PremiumTeaser";
+import SummaryCard from "./SummaryCard";
+import TipCard from "./TipCard";
+import WeeklyEnergyChart from "../charts/WeeklyEnergyChart";
+import PremiumTeaser from "./PremiumTeaser";
 
 // 3D scene
-import HouseScene from "./HouseScene";
+import HouseScene from "../HouseScene";
 
 export default function Dashboard({ data, onReset }) {
   const [forecast, setForecast] = useState(null);
@@ -73,8 +73,9 @@ export default function Dashboard({ data, onReset }) {
       <main style={{ maxWidth: 980, margin: "12px auto 40px", padding: "0 16px" }}>
         <h1 style={{ fontSize: 28, marginBottom: 8 }}>Dashboard</h1>
 
-        <SummaryCard summary={summary} />
-        <TipCard tip={data.tip} />
+        <SummaryCard userId={summary.user_id} />
+        <TipCard userId={summary.user_id} />
+
 
         {/* Free mini chart (synth or real when available) */}
         <WeeklyEnergyChart summary={summary} />
