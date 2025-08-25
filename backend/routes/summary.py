@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from models import SummaryResponse
 from db.fake_db import get_user
 
@@ -8,7 +8,7 @@ router = APIRouter()
 def get_summary(user_id: str = Query(...)):
     user = get_user(user_id)
     if not user:
-        return {"error": "User not found"}
+        raise HTTPException(status_code=404, detail="User not found")
 
     # Example logic using stored info
     has_panels = user.get("has_panels", False)
