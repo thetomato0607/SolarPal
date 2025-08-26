@@ -17,9 +17,9 @@ api.interceptors.response.use(
 );
 
 // Used by Onboarding
-export async function fetchSummary({ location, systemSize }) {
+export async function fetchSummary(userId) {
   const res = await api.get("/summary", {
-    params: { location, system_size: systemSize },
+    params: { user_id: userId },
   });
   return res.data;
 }

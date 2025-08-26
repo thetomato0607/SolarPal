@@ -21,52 +21,6 @@ export default function HouseScene({ height = 400, forecast, weather }) {
     </div>
   );
 }
-
-
-function Scene({ forecast }) {
-  return (
-    <>
-      <GridPlane />
-      <House />
-      <Clouds forecast={forecast} />
-      <Rain forecast={forecast} />
-      <WindFlag forecast={forecast} />
-    </>
-  );
-}
-
-/* ===== Lighting: sun angle by time or fallback ===== */
-function WeatherLighting({ forecast }) {
-  const dir = useRef();
-  const [t, setT] = useState(0); // index into hourly
-  const hourly = forecast?.hourly ?? [];
-  useEffect(() => {
-    if (!hourly.length) return;
-    let i = 0;
-    const id = setInterval(() => { i = (i + 1) % hourly.length; setT(i); }, 1500);
-    return () => clearInterval(id);
-  }, [hourly.length]);
-
-  // Compute light position
-  let az = THREE.MathUtils.degToRad(hourly[t]?.sun_az ?? 135);   // fallback SE
-  let el = THREE.MathUtils.degToRad(hourly[t]?.sun_el ?? 25);    // fallback 25°
-  const r = 15;
-  const x = r * Math.cos(el) * Math.sin(az);
-  const y = r * Math.sin(el);
-  const z = r * Math.cos(el) * Math.cos(az);
-
-  return (
-    <directionalLight
-      ref={dir}
-      position={[x, y, z]}
-      intensity={1}
-      castShadow
-      shadow-mapSize-width={1024}
-      shadow-mapSize-height={1024}
-    />
-  );
-}
-
 /* ===== House + Grid ===== */
 function GridPlane() {
   return (
@@ -108,28 +62,40 @@ function House() {
 function Clouds({ forecast }) {
   const hour = useForecastHour(forecast);
   const cloud = clamp01(hour?.cloud ?? 0.2); // 0..1
-
   const count = Math.round(6 + cloud * 10); // more clouds → more sprites
-  const clouds = useMemo(() => [...Array(count)].map((_, i) => ({
-    x: -8 + Math.random() * 16,
-    y: 3 + Math.random() * 3,
-    z: -6 + Math.random() * 12,
-    s: 0.8 + Math.random() * 1.6,
-    speed: 0.002 + Math.random() * 0.004
-  })), [count]);
+  const clouds = useRef([]);
+
+  // Append or trim clouds when count changes without regenerating all
+  useEffect(() => {
+    const arr = clouds.current;
+    if (arr.length < count) {
+      for (let i = arr.length; i < count; i++) {
+        arr.push({
+          x: -8 + Math.random() * 16,
+          y: 3 + Math.random() * 3,
+          z: -6 + Math.random() * 12,
+          s: 0.8 + Math.random() * 1.6,
+          speed: 0.002 + Math.random() * 0.004,
+        });
+      }
+    } else if (arr.length > count) {
+      arr.splice(count); // remove excess
+    }
+  }, [count]);
 
   const group = useRef();
-  useFrame((_, dt) => {
+  useFrame(() => {
     if (!group.current) return;
     group.current.children.forEach((m, i) => {
-      m.position.x += clouds[i].speed;
+      const c = clouds.current[i];
+      m.position.x += c.speed;
       if (m.position.x > 10) m.position.x = -10;
     });
   });
 
   return (
     <group ref={group}>
-      {clouds.map((c, i) => (
+      {clouds.current.map((c, i) => (
         <mesh key={i} position={[c.x, c.y, c.z]}>
           <sphereGeometry args={[c.s, 16, 16]} />
           <meshStandardMaterial color="#ffffff" transparent opacity={0.8} />
@@ -167,10 +133,10 @@ function Rain({ forecast }) {
   useFrame((_, dt) => {
     if (!points.current) return;
     const pos = points.current.geometry.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      let y = pos.getY(i) - (8 * dt);
-      if (y < 0) y = 8 + Math.random() * 4;
-      pos.setY(i, y);
+    const arr = pos.array;
+    for (let i = 0; i < arr.length; i += 3) {
+      arr[i + 1] -= 8 * dt;
+      if (arr[i + 1] < 0) arr[i + 1] = 8 + Math.random() * 4;
     }
     pos.needsUpdate = true;
   });
