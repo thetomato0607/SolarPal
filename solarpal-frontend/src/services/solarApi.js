@@ -38,16 +38,6 @@ export async function getWeather(lat, lon) {
   return res.data;
 }
 
-export async function fetchForecast({ location, systemSize }) {
-  // If your router is prefixed (e.g., /solar/forecast), update the path here.
-  const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
-  const res = await fetch(
-    `${baseURL}/forecast?location=${encodeURIComponent(location)}&system_size=${systemSize}`
-  );
-  if (!res.ok) throw new Error("Forecast request failed");
-  return res.json();
-}
-
 export function normalizeWeather(openWeatherJson) {
   if (!openWeatherJson) return null;
   const ow = openWeatherJson;
