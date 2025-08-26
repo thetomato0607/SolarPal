@@ -5,19 +5,23 @@ import Button from "./ui/Button";
 import CloudBackground from "./CloudBackground";
 
 export default function Onboarding({ onSuccess }) {
-  const [form, setForm] = useState({ location: "", systemSize: 5 });
+  const [form, setForm] = useState({ userId: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const onChange = (e) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!form.location?.trim()) { setError("Please enter your location."); return; }
+    if (!form.userId?.trim()) {
+      setError("Please enter your user ID.");
+      return;
+    }
     setLoading(true);
     try {
-      const data = await fetchSummary(form);
+      const data = await fetchSummary(form.userId);
       onSuccess(data);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -33,28 +37,12 @@ export default function Onboarding({ onSuccess }) {
         <Card>
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 14 }}>
-              <label>Location</label>
+              <label>User ID</label>
               <input
-                name="location"
-                value={form.location}
+                name="userId"
+                value={form.userId}
                 onChange={onChange}
-                placeholder="e.g. Sydney, AU or -33.87,151.21"
-                style={{
-                  display: "block", width: "100%", padding: 12, marginTop: 6,
-                  borderRadius: 12, border: "1px solid #d7e2eb", outline: "none"
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: 8 }}>
-              <label>System Size (kW)</label>
-              <input
-                name="systemSize"
-                type="number"
-                min="1"
-                step="0.1"
-                value={form.systemSize}
-                onChange={onChange}
+                placeholder="e.g. 12345"
                 style={{
                   display: "block", width: "100%", padding: 12, marginTop: 6,
                   borderRadius: 12, border: "1px solid #d7e2eb", outline: "none"
