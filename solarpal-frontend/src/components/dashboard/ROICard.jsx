@@ -1,6 +1,7 @@
 import Card from "../ui/Card";
 import useRoi from "../../hooks/useRoi";
 
+
 // Assumes backend /roi endpoint returns {
 //   installCost: number,       // upfront cost in GBP
 //   annualSaving: number,      // yearly energy generation in kWh
@@ -11,6 +12,30 @@ import useRoi from "../../hooks/useRoi";
 // ROI% is the yearly return relative to install cost.
 export default function ROICard({ userId }) {
   const { roi, loading, error } = useRoi(userId);
+  const [roi, setRoi] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadRoi = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchRoi(userId);
+        setRoi(data);
+      } catch (e) {
+        console.warn("Failed to load ROI:", e);
+        setError(e.message || "Failed to fetch ROI data");
+        setRoi(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRoi();
+  }, [userId]);
 
   let body;
   if (loading) {
@@ -22,6 +47,9 @@ export default function ROICard({ userId }) {
     roi.annualSaving == null ||
     roi.tariff == null
   ) {
+  } else if (error) {
+    body = <p>⚠️ {error}</p>;
+  } else if (!roi || roi.installCost == null || roi.annualSaving == null || roi.tariff == null) {
     body = <p>ROI data unavailable.</p>;
   } else {
     const annualReturn = roi.annualSaving * roi.tariff;
