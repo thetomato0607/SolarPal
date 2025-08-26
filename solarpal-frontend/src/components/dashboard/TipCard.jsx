@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
 import Card from "../ui/Card";
+import useTip from "../../hooks/useTip";
+
+export default function TipCard({ userId }) {
+  const { tip, loading, error } = useTip(userId);
 import { fetchTip } from "../../services/solarApi";
 
 export default function TipCard({ userId }) {
@@ -34,6 +37,7 @@ export default function TipCard({ userId }) {
       {loading ? (
         <p>Loading tip…</p>
       ) : error ? (
+        <p>⚠️ Couldn’t fetch your solar tip.</p>
         <p>⚠️ {error}</p>
       ) : (
         <p>{tip}</p>

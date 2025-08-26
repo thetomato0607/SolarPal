@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
 import Card from "../ui/Card";
-import { fetchRoi } from "../../services/solarApi";
+import useRoi from "../../hooks/useRoi";
+
 
 // Assumes backend /roi endpoint returns {
 //   installCost: number,       // upfront cost in GBP
@@ -11,6 +11,7 @@ import { fetchRoi } from "../../services/solarApi";
 //   paybackYears = installCost / (annualSaving * tariff)
 // ROI% is the yearly return relative to install cost.
 export default function ROICard({ userId }) {
+  const { roi, loading, error } = useRoi(userId);
   const [roi, setRoi] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -39,6 +40,13 @@ export default function ROICard({ userId }) {
   let body;
   if (loading) {
     body = <p>Loading ROI…</p>;
+  } else if (
+    error ||
+    !roi ||
+    roi.installCost == null ||
+    roi.annualSaving == null ||
+    roi.tariff == null
+  ) {
   } else if (error) {
     body = <p>⚠️ {error}</p>;
   } else if (!roi || roi.installCost == null || roi.annualSaving == null || roi.tariff == null) {

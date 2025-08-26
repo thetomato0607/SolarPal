@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
 import Card from "../ui/Card";
+import useSummary from "../../hooks/useSummary";
+
+export default function SummaryCard({ userId }) {
+  const { summary, loading, error } = useSummary(userId);
 import { fetchSummary } from "../../services/solarApi";
 
 export default function SummaryCard({ userId }) {
@@ -34,6 +37,8 @@ export default function SummaryCard({ userId }) {
       <h2 style={{ marginBottom: 8 }}>System Summary</h2>
       {loading ? (
         <p>Loading summary…</p>
+      ) : error || !summary ? (
+        <p>⚠️ Couldn’t fetch your summary.</p>
       ) : error ? (
         <p>⚠️ {error}</p>
       ) : (
