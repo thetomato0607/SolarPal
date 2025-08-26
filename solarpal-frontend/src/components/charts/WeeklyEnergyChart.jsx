@@ -87,7 +87,12 @@ export default function WeeklyEnergyChart({ summary }) {
               <YAxis tickFormatter={(v) => `${v}`} />
               <Tooltip formatter={(v) => [`${v} kWh`, "Energy"]} />
               <Legend />
-              <ReferenceLine y={avgKwh} stroke="#f87171" strokeDasharray="3 3" />
+              <ReferenceLine
+                y={avgKwh}
+                stroke="#f87171"
+                strokeDasharray="3 3"
+                label="Avg"
+              />
               <Area
                 type="monotone"
                 dataKey="kwh"
