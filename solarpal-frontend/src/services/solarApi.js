@@ -16,36 +16,46 @@ api.interceptors.response.use(
   }
 );
 
+export async function retryRequest(fn, attempts = 3) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
+}
+
 // Used by Onboarding
-export async function fetchSummary(userId) {
-  const res = await api.get("/summary", {
-    params: { user_id: userId },
-  });
-  return res.data;
+export async function fetchSummary(userId, attempts = 3) {
+  return retryRequest(
+    () => api.get("/summary", { params: { user_id: userId } }).then((r) => r.data),
+    attempts
+  );
 }
 
 // Used by Dashboard – solar forecast for charts / future use
-export async function fetchForecast({ location, systemSize }) {
-  const res = await api.get("/forecast", {
-    params: { location, system_size: systemSize },
-  });
-  return res.data;
+export async function fetchForecast({ location, systemSize }, attempts = 3) {
+  return retryRequest(
+    () =>
+      api
+        .get("/forecast", { params: { location, system_size: systemSize } })
+        .then((r) => r.data),
+    attempts
+  );
 }
 
 // Used by 3D weather scene – live weather by coordinates
-export async function getWeather(lat, lon) {
-  const res = await api.get("/weather", { params: { lat, lon } });
-  return res.data;
-}
-
-export async function fetchForecast({ location, systemSize }) {
-  // If your router is prefixed (e.g., /solar/forecast), update the path here.
-  const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
-  const res = await fetch(
-    `${baseURL}/forecast?location=${encodeURIComponent(location)}&system_size=${systemSize}`
+export async function getWeather({ lat, lon, units }, attempts = 3) {
+  return retryRequest(
+    () =>
+      api
+        .get("/weather", { params: { lat, lon, units } })
+        .then((r) => r.data),
+    attempts
   );
-  if (!res.ok) throw new Error("Forecast request failed");
-  return res.json();
 }
 
 export function normalizeWeather(openWeatherJson) {

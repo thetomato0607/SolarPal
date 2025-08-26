@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Onboarding from "./components/Onboarding";
 import Dashboard from "./components/dashboard/Dashboard";
 import { loadState, saveState, clearState } from "./lib/storage";
+import ErrorBoundary from "./components/ui/ErrorBoundary";
 
 export default function App() {
   const [appStage, setAppStage] = useState("onboarding"); // 'onboarding' | 'dashboard'
@@ -31,8 +32,12 @@ export default function App() {
   };
 
   return appStage === "onboarding" ? (
-    <Onboarding onSuccess={handleOnboardingSuccess} />
+    <ErrorBoundary>
+      <Onboarding onSuccess={handleOnboardingSuccess} />
+    </ErrorBoundary>
   ) : (
-    <Dashboard data={dashboardData} onReset={handleReset} />
+    <ErrorBoundary>
+      <Dashboard data={dashboardData} onReset={handleReset} />
+    </ErrorBoundary>
   );
 }

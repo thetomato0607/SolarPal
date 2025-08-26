@@ -1,6 +1,6 @@
-import { useMemo } from "react";
 import PropTypes from "prop-types";
 import Card from "./ui/Card";
+import Button from "./ui/Button";
 
 /**
  * WeatherCard
@@ -9,13 +9,25 @@ import Card from "./ui/Card";
  *  - loading: boolean
  *  - error: string | null
  */
-export default function WeatherCard({ weather, loading, error }) {
-  const body = useMemo(() => {
-    if (loading) return <p className="opacity-70">Loading weather…</p>;
-    if (error)   return <p className="text-red-600">Weather error: {String(error)}</p>;
-    if (!weather) return <p className="opacity-70">No weather data.</p>;
-
-    return (
+export default function WeatherCard({ weather, loading, error, onRetry }) {
+  let body;
+  if (loading) {
+    body = <p className="opacity-70">Loading weather…</p>;
+  } else if (error) {
+    body = (
+      <div>
+        <p className="text-red-600">Weather error: {String(error)}</p>
+        {onRetry && (
+          <Button style={{ marginTop: 8 }} onClick={onRetry}>
+            Retry
+          </Button>
+        )}
+      </div>
+    );
+  } else if (!weather) {
+    body = <p className="opacity-70">No weather data.</p>;
+  } else {
+    body = (
       <div className="flex items-center gap-4">
         {weather.iconUrl && (
           <img
@@ -39,13 +51,9 @@ export default function WeatherCard({ weather, loading, error }) {
         </div>
       </div>
     );
-  }, [loading, error, weather]);
+  }
 
-  return (
-    <Card title="Current Weather">
-      {body}
-    </Card>
-  );
+  return <Card title="Current Weather">{body}</Card>;
 }
 
 WeatherCard.propTypes = {
@@ -58,4 +66,5 @@ WeatherCard.propTypes = {
   }),
   loading: PropTypes.bool,
   error: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+  onRetry: PropTypes.func,
 };

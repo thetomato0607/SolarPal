@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import CloudBackground from "../CloudBackground";
 import Header from "../Header";
 import Card from "../ui/Card";
+import ErrorBoundary from "../ui/ErrorBoundary";
 
 import SummaryCard from "./SummaryCard";
 import TipCard from "./TipCard";
@@ -26,10 +27,7 @@ function Dashboard({ data, onReset }) {
   const summary = data?.summary ?? data;
   const isPremium = false; // TODO: replace with real auth/subscription
 
-  // ---------------------------
-  // 1) WEATHER EFFECT
-  // ---------------------------
-  useEffect(() => {
+  const fetchWeatherData = async () => {
     if (!data) return;
     const s = data.summary ?? data;
 
@@ -51,8 +49,7 @@ function Dashboard({ data, onReset }) {
     };
 
     if (typeof lat === "number" && typeof lon === "number") {
-      // Use provided coordinates
-      loadByLatLon(lat, lon);
+      await loadByLatLon(lat, lon);
       return;
     }
 
@@ -72,6 +69,10 @@ function Dashboard({ data, onReset }) {
     } else {
       setWeatherError("Geolocation unavailable");
     }
+  };
+
+  useEffect(() => {
+    fetchWeatherData();
   }, [data]);
 
   // ---------------------------
@@ -105,24 +106,41 @@ function Dashboard({ data, onReset }) {
 
         {/* Summary + current weather */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <SummaryCard userId={summary.user_id} />
-          <WeatherCard weather={weather} loading={weatherLoading} error={weatherError} />
+          <ErrorBoundary>
+            <SummaryCard userId={summary.user_id} />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <WeatherCard
+              weather={weather}
+              loading={weatherLoading}
+              error={weatherError}
+              onRetry={fetchWeatherData}
+            />
+          </ErrorBoundary>
         </div>
 
-        <TipCard userId={summary.user_id} />
+        <ErrorBoundary>
+          <TipCard userId={summary.user_id} />
+        </ErrorBoundary>
 
-        <ROICard userId={summary.user_id} />
+        <ErrorBoundary>
+          <ROICard userId={summary.user_id} />
+        </ErrorBoundary>
 
         {/* Free mini chart */}
-        <WeeklyEnergyChart
-          userId={summary.user_id}
-          systemSize={summary.system_size_kw ?? 5}
-        />
+        <ErrorBoundary>
+          <WeeklyEnergyChart
+            userId={summary.user_id}
+            systemSize={summary.system_size_kw ?? 5}
+          />
+        </ErrorBoundary>
 
         {/* Interactive 3D house + weather animations */}
-        <Card style={{ marginTop: 12, padding: 0 }}>
-          <HouseScene height={380} forecast={forecast} weather={weather} />
-        </Card>
+        <ErrorBoundary>
+          <Card style={{ marginTop: 12, padding: 0 }}>
+            <HouseScene height={380} forecast={forecast} weather={weather} />
+          </Card>
+        </ErrorBoundary>
 
         {!isPremium && <PremiumTeaser />}
       </main>
