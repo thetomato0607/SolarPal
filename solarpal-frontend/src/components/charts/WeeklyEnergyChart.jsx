@@ -8,6 +8,7 @@ export default function WeeklyEnergyChart({ userId, systemSize = 5 }) {
   const [daily, setDaily] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [isNarrow, setIsNarrow] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -28,6 +29,15 @@ export default function WeeklyEnergyChart({ userId, systemSize = 5 }) {
     })();
   }, [userId, systemSize]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 500px)");
+    const handler = (e) => setIsNarrow(e.matches);
+    handler(mq);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   const chartData = useMemo(() => {
     // Normalize to { day: 'Mon', kwh: number }
     return daily.map((d) => ({
@@ -45,9 +55,8 @@ export default function WeeklyEnergyChart({ userId, systemSize = 5 }) {
       {!loading && !err && chartData.length === 0 && <p>No forecast available.</p>}
 
       {!loading && !err && chartData.length > 0 && (
-        <div style={{ width: "100%", height: 260 }}>
-          <ResponsiveContainer>
-            <LineChart data={chartData} margin={{ top: 10, right: 16, bottom: 0, left: -10 }}>
+        <ResponsiveContainer width="100%" height={isNarrow ? 200 : 260}>
+          <LineChart data={chartData} margin={{ top: 10, right: 16, bottom: 0, left: -10 }}>
               <defs>
                 <linearGradient id="kwhGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.9} />
@@ -67,9 +76,8 @@ export default function WeeklyEnergyChart({ userId, systemSize = 5 }) {
                 dot={{ r: 3 }}
                 activeDot={{ r: 5 }}
               />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+          </LineChart>
+        </ResponsiveContainer>
       )}
     </Card>
   );

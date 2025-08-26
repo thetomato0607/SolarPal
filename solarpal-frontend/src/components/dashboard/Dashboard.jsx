@@ -22,8 +22,7 @@ export default function Dashboard({ data, onReset }) {
   const [forecast, setForecast] = useState(null);
   const [weather, setWeather] = useState(null);
 
-  if (!data) return null;
-  const summary = data.summary ?? data;
+  const summary = data?.summary ?? data;
   const isPremium = false; // TODO: replace with real auth/subscription
 
   useEffect(() => {
@@ -63,15 +62,16 @@ export default function Dashboard({ data, onReset }) {
         );
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, onReset, summary.location, summary.system_size_kw]);
+  }, [data, onReset, summary?.location, summary?.system_size_kw]);
+
+  if (!data) return null;
 
   return (
     <CloudBackground>
       <Header onReset={onReset} />
 
-      <main style={{ maxWidth: 980, margin: "12px auto 40px", padding: "0 16px" }}>
-        <h1 style={{ fontSize: 28, marginBottom: 8 }}>Dashboard</h1>
+      <main className="max-w-screen-lg mx-auto mt-3 mb-10 px-4 sm:px-6">
+        <h1 className="text-2xl sm:text-3xl mb-2">Dashboard</h1>
 
         <SummaryCard userId={summary.user_id} />
         <TipCard userId={summary.user_id} />

@@ -2,12 +2,9 @@ import GhostButton from "./ui/GhostButton";
 
 export default function Header({ onReset }) {
   return (
-    <div style={{ 
-      display:"flex", alignItems:"center", justifyContent:"space-between",
-      padding:"14px 16px", maxWidth:980, margin:"0 auto"
-    }}>
-      <div style={{ fontWeight:800, letterSpacing:.2, fontSize:20 }}>🌤️ SolarPal</div>
-      <GhostButton onClick={onReset}>Reset</GhostButton>
-    </div>
+    <header className="flex items-center justify-between w-full max-w-screen-lg mx-auto px-4 py-3">
+      <div className="font-extrabold tracking-wide text-xl sm:text-2xl">🌤️ SolarPal</div>
+      <GhostButton onClick={onReset} className="text-sm sm:text-base">Reset</GhostButton>
+    </header>
   );
 }
