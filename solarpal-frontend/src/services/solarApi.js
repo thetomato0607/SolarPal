@@ -16,9 +16,25 @@ api.interceptors.response.use(
   }
 );
 
-// Used by Onboarding
+// Used by Onboarding and Dashboard summary card
 export async function fetchSummary(userId) {
   const res = await api.get("/summary", {
+    params: { user_id: userId },
+  });
+  return res.data?.summary ?? res.data;
+}
+
+// Dashboard – helpful solar tip for the user
+export async function fetchTip(userId) {
+  const res = await api.get("/tips", {
+    params: { user_id: userId },
+  });
+  return res.data?.tip ?? res.data;
+}
+
+// Dashboard – ROI metrics
+export async function fetchRoi(userId) {
+  const res = await api.get("/roi", {
     params: { user_id: userId },
   });
   return res.data;
@@ -36,16 +52,6 @@ export async function fetchForecast({ location, systemSize }) {
 export async function getWeather(lat, lon) {
   const res = await api.get("/weather", { params: { lat, lon } });
   return res.data;
-}
-
-export async function fetchForecast({ location, systemSize }) {
-  // If your router is prefixed (e.g., /solar/forecast), update the path here.
-  const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
-  const res = await fetch(
-    `${baseURL}/forecast?location=${encodeURIComponent(location)}&system_size=${systemSize}`
-  );
-  if (!res.ok) throw new Error("Forecast request failed");
-  return res.json();
 }
 
 export function normalizeWeather(openWeatherJson) {

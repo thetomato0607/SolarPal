@@ -1,28 +1,32 @@
 import { useEffect, useState } from "react";
 import Card from "../ui/Card";
+import { fetchSummary } from "../../services/solarApi";
 
 export default function SummaryCard({ userId }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!userId) return;
 
-    const fetchSummary = async () => {
+    const loadSummary = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:8000/summary?user_id=${userId}`);
-        const data = await res.json();
-        setSummary(data.summary ?? data); // handle both wrapped & raw
+        setError(null);
+        const data = await fetchSummary(userId);
+        if (!data) throw new Error("Summary unavailable");
+        setSummary(data);
       } catch (e) {
         console.warn("Failed to load summary:", e);
+        setError(e.message || "Couldn’t fetch your summary.");
         setSummary(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSummary();
+    loadSummary();
   }, [userId]);
 
   return (
@@ -30,8 +34,8 @@ export default function SummaryCard({ userId }) {
       <h2 style={{ marginBottom: 8 }}>System Summary</h2>
       {loading ? (
         <p>Loading summary…</p>
-      ) : !summary ? (
-        <p>⚠️ Couldn’t fetch your summary.</p>
+      ) : error ? (
+        <p>⚠️ {error}</p>
       ) : (
         <ul style={{ lineHeight: 1.6 }}>
           <li><b>User ID:</b> {summary.user_id}</li>
