@@ -167,10 +167,10 @@ function Rain({ forecast }) {
   useFrame((_, dt) => {
     if (!points.current) return;
     const pos = points.current.geometry.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      let y = pos.getY(i) - (8 * dt);
-      if (y < 0) y = 8 + Math.random() * 4;
-      pos.setY(i, y);
+    const arr = pos.array;
+    for (let i = 0; i < arr.length; i += 3) {
+      arr[i + 1] -= 8 * dt;
+      if (arr[i + 1] < 0) arr[i + 1] = 8 + Math.random() * 4;
     }
     pos.needsUpdate = true;
   });
