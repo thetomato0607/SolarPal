@@ -1,46 +1,9 @@
 import Card from "../ui/Card";
-import Button from "../ui/Button";
-import { fetchSummary } from "../../services/solarApi";
+
+import useSummary from "../../hooks/useSummary";
 
 export default function SummaryCard({ userId }) {
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const load = async () => {
-    if (!userId) return;
-    try {
-      setLoading(true);
-      setError("");
-      const data = await fetchSummary(userId);
-      setSummary(data.summary ?? data);
-    } catch (e) {
-      console.warn("Failed to load summary:", e);
-      setError(e?.message || "Failed to load summary");
-      setSummary(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-    const loadSummary = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchSummary(userId);
-        if (!data) throw new Error("Summary unavailable");
-        setSummary(data);
-      } catch (e) {
-        console.warn("Failed to load summary:", e);
-        setError(e.message || "Couldn’t fetch your summary.");
-        setSummary(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSummary();
-  }, [userId]);
+  const { summary, loading, error } = useSummary(userId);
 
   return (
     <Card>
@@ -48,19 +11,28 @@ export default function SummaryCard({ userId }) {
       {loading ? (
         <p>Loading summary…</p>
       ) : error ? (
-        <div>
-          <p>⚠️ {error}</p>
-          <Button style={{ marginTop: 8 }} onClick={load}>
-            Retry
-          </Button>
-        </div>
-      ) : summary ? (
+
+        <p>⚠️ {error?.message || "Couldn’t fetch your summary."}</p>
+      ) : !summary ? (
+        <p>⚠️ Couldn’t fetch your summary.</p>
+      ) : (
+
         <ul style={{ lineHeight: 1.6 }}>
-          <li><b>User ID:</b> {summary.user_id}</li>
-          <li><b>Daily Savings:</b> £{summary.daily_saving_gbp}</li>
-          <li><b>CO₂ Offset:</b> {summary.co2_offset_kg} kg</li>
-          <li><b>Battery:</b> {summary.battery_status}</li>
-          <li><b>Message:</b> {summary.message}</li>
+          <li>
+            <b>User ID:</b> {summary.user_id}
+          </li>
+          <li>
+            <b>Daily Savings:</b> £{summary.daily_saving_gbp}
+          </li>
+          <li>
+            <b>CO₂ Offset:</b> {summary.co2_offset_kg} kg
+          </li>
+          <li>
+            <b>Battery:</b> {summary.battery_status}
+          </li>
+          <li>
+            <b>Message:</b> {summary.message}
+          </li>
         </ul>
       ) : (
         <p>⚠️ Couldn’t fetch your summary.</p>
@@ -68,3 +40,4 @@ export default function SummaryCard({ userId }) {
     </Card>
   );
 }
+
