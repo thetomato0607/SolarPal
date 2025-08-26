@@ -12,6 +12,7 @@ import Card from "../ui/Card";
 // dashboard pieces
 import SummaryCard from "./SummaryCard";
 import TipCard from "./TipCard";
+import ROICard from "./ROICard";
 import WeeklyEnergyChart from "../charts/WeeklyEnergyChart";
 import PremiumTeaser from "./PremiumTeaser";
 
@@ -75,6 +76,7 @@ export default function Dashboard({ data, onReset }) {
 
         <SummaryCard userId={summary.user_id} />
         <TipCard userId={summary.user_id} />
+        <ROICard userId={summary.user_id} />
 
 
         {/* Free mini chart (synth or real when available) */}
