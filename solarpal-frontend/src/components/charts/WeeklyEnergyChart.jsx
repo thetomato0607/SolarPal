@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Card from "../ui/Card";
+import Button from "../ui/Button";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -14,32 +15,31 @@ import {
 // If you prefer to call the backend via your service wrapper:
 import { fetchForecast } from "../../services/solarApi";
 
-export default function WeeklyEnergyChart({ summary }) {
-  const userId = summary?.user_id;
-  const systemSize = summary?.system_size_kw ?? 5;
+export default function WeeklyEnergyChart({ userId, systemSize }) {
   const [daily, setDaily] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [isNarrow, setIsNarrow] = useState(false);
   const [isShort, setIsShort] = useState(false);
 
-  useEffect(() => {
+  const load = async () => {
     if (!userId) return;
+    setLoading(true);
+    setErr("");
+    try {
+      // NOTE: Our backend currently accepts "location" — we’re passing userId as a stand-in.
+      const data = await fetchForecast({ location: userId, systemSize });
+      setDaily(Array.isArray(data?.daily) ? data.daily : []);
+    } catch (e) {
+      setErr(e?.message || "Failed to load forecast");
+      setDaily([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    (async () => {
-      setLoading(true);
-      setErr("");
-      try {
-        // NOTE: Our backend currently accepts "location" — we’re passing userId as a stand-in.
-        const data = await fetchForecast({ location: userId, systemSize });
-        setDaily(Array.isArray(data?.daily) ? data.daily : []);
-      } catch (e) {
-        setErr(e?.message || "Failed to load forecast");
-        setDaily([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
+  useEffect(() => {
+    load();
   }, [userId, systemSize]);
 
   useEffect(() => {
@@ -78,7 +78,14 @@ export default function WeeklyEnergyChart({ summary }) {
       <h2 className="mb-2">Weekly Energy Forecast</h2>
 
       {loading && <p>Loading forecast…</p>}
-      {!loading && err && <p>⚠️ {err}</p>}
+      {!loading && err && (
+        <div>
+          <p>⚠️ {err}</p>
+          <Button style={{ marginTop: 8 }} onClick={load}>
+            Retry
+          </Button>
+        </div>
+      )}
       {!loading && !err && chartData.length === 0 && <p>No forecast available.</p>}
 
       {!loading && !err && chartData.length > 0 && (

@@ -1,6 +1,5 @@
 import Card from "../ui/Card";
-import useRoi from "../../hooks/useRoi";
-
+import Button from "../ui/Button";
 
 // Assumes backend /roi endpoint returns {
 //   installCost: number,       // upfront cost in GBP
@@ -14,10 +13,25 @@ export default function ROICard({ userId }) {
   const { roi, loading, error } = useRoi(userId);
   const [roi, setRoi] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
+  const load = async () => {
     if (!userId) return;
+    try {
+      setLoading(true);
+      setError("");
+      const res = await fetch(`http://localhost:8000/roi?user_id=${userId}`);
+      if (!res.ok) throw new Error("Failed to fetch ROI data");
+      const data = await res.json();
+      setRoi(data);
+    } catch (e) {
+      console.warn("Failed to load ROI:", e);
+      setError(e?.message || "Failed to load ROI");
+      setRoi(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
     const loadRoi = async () => {
       try {
@@ -40,15 +54,15 @@ export default function ROICard({ userId }) {
   let body;
   if (loading) {
     body = <p>Loading ROI…</p>;
-  } else if (
-    error ||
-    !roi ||
-    roi.installCost == null ||
-    roi.annualSaving == null ||
-    roi.tariff == null
-  ) {
   } else if (error) {
-    body = <p>⚠️ {error}</p>;
+    body = (
+      <div>
+        <p>⚠️ {error}</p>
+        <Button style={{ marginTop: 8 }} onClick={load}>
+          Retry
+        </Button>
+      </div>
+    );
   } else if (!roi || roi.installCost == null || roi.annualSaving == null || roi.tariff == null) {
     body = <p>ROI data unavailable.</p>;
   } else {

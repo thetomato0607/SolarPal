@@ -1,4 +1,5 @@
 import Card from "../ui/Card";
+
 import useSummary from "../../hooks/useSummary";
 
 export default function SummaryCard({ userId }) {
@@ -10,10 +11,12 @@ export default function SummaryCard({ userId }) {
       {loading ? (
         <p>Loading summary…</p>
       ) : error ? (
+
         <p>⚠️ {error?.message || "Couldn’t fetch your summary."}</p>
       ) : !summary ? (
         <p>⚠️ Couldn’t fetch your summary.</p>
       ) : (
+
         <ul style={{ lineHeight: 1.6 }}>
           <li>
             <b>User ID:</b> {summary.user_id}
@@ -31,6 +34,8 @@ export default function SummaryCard({ userId }) {
             <b>Message:</b> {summary.message}
           </li>
         </ul>
+      ) : (
+        <p>⚠️ Couldn’t fetch your summary.</p>
       )}
     </Card>
   );
