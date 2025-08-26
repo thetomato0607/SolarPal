@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Onboarding from "./components/Onboarding";
-import Dashboard from "./components/Dashboard";
+import Dashboard from "./components/dashboard/Dashboard";
 import { loadState, saveState, clearState } from "./lib/storage";
 
 export default function App() {
