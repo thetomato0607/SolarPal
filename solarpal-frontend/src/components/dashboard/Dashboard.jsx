@@ -114,10 +114,7 @@ function Dashboard({ data, onReset }) {
         <ROICard userId={summary.user_id} />
 
         {/* Free mini chart */}
-        <WeeklyEnergyChart
-          userId={summary.user_id}
-          systemSize={summary.system_size_kw ?? 5}
-        />
+        <WeeklyEnergyChart summary={summary} />
 
         {/* Interactive 3D house + weather animations */}
         <Card style={{ marginTop: 12, padding: 0 }}>
