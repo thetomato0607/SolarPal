@@ -16,9 +16,25 @@ api.interceptors.response.use(
   }
 );
 
-// Used by Onboarding
+// Used by Onboarding and Dashboard summary card
 export async function fetchSummary(userId) {
   const res = await api.get("/summary", {
+    params: { user_id: userId },
+  });
+  return res.data?.summary ?? res.data;
+}
+
+// Dashboard – helpful solar tip for the user
+export async function fetchTip(userId) {
+  const res = await api.get("/tips", {
+    params: { user_id: userId },
+  });
+  return res.data?.tip ?? res.data;
+}
+
+// Dashboard – ROI metrics
+export async function fetchRoi(userId) {
+  const res = await api.get("/roi", {
     params: { user_id: userId },
   });
   return res.data;

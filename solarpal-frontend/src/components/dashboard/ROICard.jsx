@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Card from "../ui/Card";
+import { fetchRoi } from "../../services/solarApi";
 
 // Assumes backend /roi endpoint returns {
 //   installCost: number,       // upfront cost in GBP
@@ -12,31 +13,34 @@ import Card from "../ui/Card";
 export default function ROICard({ userId }) {
   const [roi, setRoi] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!userId) return;
 
-    const fetchRoi = async () => {
+    const loadRoi = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:8000/roi?user_id=${userId}`);
-        if (!res.ok) throw new Error("Failed to fetch ROI data");
-        const data = await res.json();
+        setError(null);
+        const data = await fetchRoi(userId);
         setRoi(data);
       } catch (e) {
         console.warn("Failed to load ROI:", e);
+        setError(e.message || "Failed to fetch ROI data");
         setRoi(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRoi();
+    loadRoi();
   }, [userId]);
 
   let body;
   if (loading) {
     body = <p>Loading ROI…</p>;
+  } else if (error) {
+    body = <p>⚠️ {error}</p>;
   } else if (!roi || roi.installCost == null || roi.annualSaving == null || roi.tariff == null) {
     body = <p>ROI data unavailable.</p>;
   } else {
