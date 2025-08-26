@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import Card from "../ui/Card";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Legend,
+  ReferenceLine,
+} from "recharts";
 // If you prefer to call the backend via your service wrapper:
 import { fetchForecast } from "../../services/solarApi";
 
-export default function WeeklyEnergyChart({ userId, systemSize = 5 }) {
+export default function WeeklyEnergyChart({ summary }) {
+  const userId = summary?.user_id;
+  const systemSize = summary?.system_size_kw ?? 5;
   const [daily, setDaily] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -46,6 +58,13 @@ export default function WeeklyEnergyChart({ userId, systemSize = 5 }) {
     }));
   }, [daily]);
 
+  const avgKwh = useMemo(() => {
+    if (chartData.length === 0) return 0;
+    return (
+      chartData.reduce((sum, d) => sum + d.kwh, 0) / chartData.length
+    );
+  }, [chartData]);
+
   return (
     <Card>
       <h2 style={{ marginBottom: 8 }}>Weekly Energy Forecast</h2>
@@ -56,7 +75,7 @@ export default function WeeklyEnergyChart({ userId, systemSize = 5 }) {
 
       {!loading && !err && chartData.length > 0 && (
         <ResponsiveContainer width="100%" height={isNarrow ? 200 : 260}>
-          <LineChart data={chartData} margin={{ top: 10, right: 16, bottom: 0, left: -10 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 16, bottom: 0, left: -10 }}>
               <defs>
                 <linearGradient id="kwhGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.9} />
@@ -68,15 +87,15 @@ export default function WeeklyEnergyChart({ userId, systemSize = 5 }) {
               <YAxis tickFormatter={(v) => `${v}`} />
               <Tooltip formatter={(v) => [`${v} kWh`, "Energy"]} />
               <Legend />
-              <Line
+              <ReferenceLine y={avgKwh} stroke="#f87171" strokeDasharray="3 3" />
+              <Area
                 type="monotone"
                 dataKey="kwh"
                 stroke="#0ea5e9"
                 strokeWidth={2.5}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
+                fill="url(#kwhGrad)"
               />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       )}
     </Card>
