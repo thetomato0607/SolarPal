@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
 import Card from "../ui/Card";
-import Button from "../ui/Button";
+import useTip from "../../hooks/useTip";
+
+export default function TipCard({ userId }) {
+  const { tip, loading, error } = useTip(userId);
+import { fetchTip } from "../../services/solarApi";
 
 export default function TipCard({ userId }) {
   const [tip, setTip] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
 
   const load = async () => {
     if (!userId) return;
@@ -24,8 +27,22 @@ export default function TipCard({ userId }) {
     }
   };
 
-  useEffect(() => {
-    load();
+    const loadTip = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchTip(userId);
+        setTip(data ?? "No tip available right now.");
+      } catch (e) {
+        console.warn("Failed to load tip:", e);
+        setError(e.message || "Couldn’t fetch your solar tip.");
+        setTip(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTip();
   }, [userId]);
 
   return (

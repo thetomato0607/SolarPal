@@ -16,24 +16,28 @@ api.interceptors.response.use(
   }
 );
 
-export async function retryRequest(fn, attempts = 3) {
-  let lastErr;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-    }
-  }
-  throw lastErr;
+// Used by Onboarding and Dashboard summary card
+export async function fetchSummary(userId) {
+  const res = await api.get("/summary", {
+    params: { user_id: userId },
+  });
+  return res.data?.summary ?? res.data;
 }
 
-// Used by Onboarding
-export async function fetchSummary(userId, attempts = 3) {
-  return retryRequest(
-    () => api.get("/summary", { params: { user_id: userId } }).then((r) => r.data),
-    attempts
-  );
+// Dashboard – helpful solar tip for the user
+export async function fetchTip(userId) {
+  const res = await api.get("/tips", {
+    params: { user_id: userId },
+  });
+  return res.data?.tip ?? res.data;
+}
+
+// Dashboard – ROI metrics
+export async function fetchRoi(userId) {
+  const res = await api.get("/roi", {
+    params: { user_id: userId },
+  });
+  return res.data;
 }
 
 // Used by Dashboard – solar forecast for charts / future use
@@ -48,14 +52,9 @@ export async function fetchForecast({ location, systemSize }, attempts = 3) {
 }
 
 // Used by 3D weather scene – live weather by coordinates
-export async function getWeather({ lat, lon, units }, attempts = 3) {
-  return retryRequest(
-    () =>
-      api
-        .get("/weather", { params: { lat, lon, units } })
-        .then((r) => r.data),
-    attempts
-  );
+export async function getWeather({ lat, lon, units }) {
+  const res = await api.get("/weather", { params: { lat, lon, units } });
+  return res.data;
 }
 
 export function normalizeWeather(openWeatherJson) {

@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 
@@ -11,6 +10,7 @@ import Button from "../ui/Button";
 //   paybackYears = installCost / (annualSaving * tariff)
 // ROI% is the yearly return relative to install cost.
 export default function ROICard({ userId }) {
+  const { roi, loading, error } = useRoi(userId);
   const [roi, setRoi] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -33,8 +33,22 @@ export default function ROICard({ userId }) {
     }
   };
 
-  useEffect(() => {
-    load();
+    const loadRoi = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchRoi(userId);
+        setRoi(data);
+      } catch (e) {
+        console.warn("Failed to load ROI:", e);
+        setError(e.message || "Failed to fetch ROI data");
+        setRoi(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRoi();
   }, [userId]);
 
   let body;

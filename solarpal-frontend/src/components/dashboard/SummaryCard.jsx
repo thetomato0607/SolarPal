@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 import { fetchSummary } from "../../services/solarApi";
@@ -24,8 +23,23 @@ export default function SummaryCard({ userId }) {
     }
   };
 
-  useEffect(() => {
-    load();
+    const loadSummary = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await fetchSummary(userId);
+        if (!data) throw new Error("Summary unavailable");
+        setSummary(data);
+      } catch (e) {
+        console.warn("Failed to load summary:", e);
+        setError(e.message || "Couldn’t fetch your summary.");
+        setSummary(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSummary();
   }, [userId]);
 
   return (

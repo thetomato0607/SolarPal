@@ -101,8 +101,8 @@ function Dashboard({ data, onReset }) {
     <CloudBackground>
       <Header onReset={onReset} />
 
-      <main style={{ maxWidth: 980, margin: "12px auto 40px", padding: "0 16px" }}>
-        <h1 style={{ fontSize: 28, marginBottom: 8 }}>Dashboard</h1>
+      <main className="mx-auto max-w-screen-lg px-4 mt-3 mb-10">
+        <h1 className="mb-2 text-[28px]">Dashboard</h1>
 
         {/* Summary + current weather */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

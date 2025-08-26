@@ -20,6 +20,7 @@ export default function WeeklyEnergyChart({ userId, systemSize }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [isNarrow, setIsNarrow] = useState(false);
+  const [isShort, setIsShort] = useState(false);
 
   const load = async () => {
     if (!userId) return;
@@ -43,11 +44,18 @@ export default function WeeklyEnergyChart({ userId, systemSize }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(max-width: 500px)");
-    const handler = (e) => setIsNarrow(e.matches);
-    handler(mq);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    const mqWidth = window.matchMedia("(max-width: 500px)");
+    const mqHeight = window.matchMedia("(max-height: 400px)");
+    const widthHandler = (e) => setIsNarrow(e.matches);
+    const heightHandler = (e) => setIsShort(e.matches);
+    widthHandler(mqWidth);
+    heightHandler(mqHeight);
+    mqWidth.addEventListener("change", widthHandler);
+    mqHeight.addEventListener("change", heightHandler);
+    return () => {
+      mqWidth.removeEventListener("change", widthHandler);
+      mqHeight.removeEventListener("change", heightHandler);
+    };
   }, []);
 
   const chartData = useMemo(() => {
@@ -67,7 +75,7 @@ export default function WeeklyEnergyChart({ userId, systemSize }) {
 
   return (
     <Card>
-      <h2 style={{ marginBottom: 8 }}>Weekly Energy Forecast</h2>
+      <h2 className="mb-2">Weekly Energy Forecast</h2>
 
       {loading && <p>Loading forecast…</p>}
       {!loading && err && (
@@ -81,7 +89,7 @@ export default function WeeklyEnergyChart({ userId, systemSize }) {
       {!loading && !err && chartData.length === 0 && <p>No forecast available.</p>}
 
       {!loading && !err && chartData.length > 0 && (
-        <ResponsiveContainer width="100%" height={isNarrow ? 200 : 260}>
+        <ResponsiveContainer width="100%" height={isShort ? 160 : isNarrow ? 200 : 260}>
           <AreaChart data={chartData} margin={{ top: 10, right: 16, bottom: 0, left: -10 }}>
               <defs>
                 <linearGradient id="kwhGrad" x1="0" y1="0" x2="0" y2="1">
