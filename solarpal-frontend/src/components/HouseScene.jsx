@@ -21,52 +21,6 @@ export default function HouseScene({ height = 400, forecast, weather }) {
     </div>
   );
 }
-
-
-function Scene({ forecast }) {
-  return (
-    <>
-      <GridPlane />
-      <House />
-      <Clouds forecast={forecast} />
-      <Rain forecast={forecast} />
-      <WindFlag forecast={forecast} />
-    </>
-  );
-}
-
-/* ===== Lighting: sun angle by time or fallback ===== */
-function WeatherLighting({ forecast }) {
-  const dir = useRef();
-  const [t, setT] = useState(0); // index into hourly
-  const hourly = forecast?.hourly ?? [];
-  useEffect(() => {
-    if (!hourly.length) return;
-    let i = 0;
-    const id = setInterval(() => { i = (i + 1) % hourly.length; setT(i); }, 1500);
-    return () => clearInterval(id);
-  }, [hourly.length]);
-
-  // Compute light position
-  let az = THREE.MathUtils.degToRad(hourly[t]?.sun_az ?? 135);   // fallback SE
-  let el = THREE.MathUtils.degToRad(hourly[t]?.sun_el ?? 25);    // fallback 25°
-  const r = 15;
-  const x = r * Math.cos(el) * Math.sin(az);
-  const y = r * Math.sin(el);
-  const z = r * Math.cos(el) * Math.cos(az);
-
-  return (
-    <directionalLight
-      ref={dir}
-      position={[x, y, z]}
-      intensity={1}
-      castShadow
-      shadow-mapSize-width={1024}
-      shadow-mapSize-height={1024}
-    />
-  );
-}
-
 /* ===== House + Grid ===== */
 function GridPlane() {
   return (
