@@ -108,28 +108,40 @@ function House() {
 function Clouds({ forecast }) {
   const hour = useForecastHour(forecast);
   const cloud = clamp01(hour?.cloud ?? 0.2); // 0..1
-
   const count = Math.round(6 + cloud * 10); // more clouds → more sprites
-  const clouds = useMemo(() => [...Array(count)].map((_, i) => ({
-    x: -8 + Math.random() * 16,
-    y: 3 + Math.random() * 3,
-    z: -6 + Math.random() * 12,
-    s: 0.8 + Math.random() * 1.6,
-    speed: 0.002 + Math.random() * 0.004
-  })), [count]);
+  const clouds = useRef([]);
+
+  // Append or trim clouds when count changes without regenerating all
+  useEffect(() => {
+    const arr = clouds.current;
+    if (arr.length < count) {
+      for (let i = arr.length; i < count; i++) {
+        arr.push({
+          x: -8 + Math.random() * 16,
+          y: 3 + Math.random() * 3,
+          z: -6 + Math.random() * 12,
+          s: 0.8 + Math.random() * 1.6,
+          speed: 0.002 + Math.random() * 0.004,
+        });
+      }
+    } else if (arr.length > count) {
+      arr.splice(count); // remove excess
+    }
+  }, [count]);
 
   const group = useRef();
-  useFrame((_, dt) => {
+  useFrame(() => {
     if (!group.current) return;
     group.current.children.forEach((m, i) => {
-      m.position.x += clouds[i].speed;
+      const c = clouds.current[i];
+      m.position.x += c.speed;
       if (m.position.x > 10) m.position.x = -10;
     });
   });
 
   return (
     <group ref={group}>
-      {clouds.map((c, i) => (
+      {clouds.current.map((c, i) => (
         <mesh key={i} position={[c.x, c.y, c.z]}>
           <sphereGeometry args={[c.s, 16, 16]} />
           <meshStandardMaterial color="#ffffff" transparent opacity={0.8} />
