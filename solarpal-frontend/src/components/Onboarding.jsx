@@ -12,8 +12,7 @@ export default function Onboarding({ onSuccess }) {
   const onChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const requestSummary = async () => {
     setError("");
     if (!form.userId?.trim()) {
       setError("Please enter your user ID.");
@@ -28,6 +27,15 @@ export default function Onboarding({ onSuccess }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    requestSummary();
+  };
+
+  const handleRetry = () => {
+    requestSummary();
   };
 
   return (
@@ -50,7 +58,14 @@ export default function Onboarding({ onSuccess }) {
               />
             </div>
 
-            {error && <p style={{ color: "#b00020", marginTop: 8 }}>{error}</p>}
+            {error && (
+              <div style={{ color: "#b00020", marginTop: 8 }}>
+                <p>{error}</p>
+                <Button type="button" onClick={handleRetry} disabled={loading} style={{ marginTop: 8 }}>
+                  Retry
+                </Button>
+              </div>
+            )}
 
             <div style={{ marginTop: 16 }}>
               <Button type="submit" disabled={loading}>
