@@ -41,11 +41,14 @@ export async function fetchRoi(userId) {
 }
 
 // Used by Dashboard – solar forecast for charts / future use
-export async function fetchForecast({ location, systemSize }) {
-  const res = await api.get("/forecast", {
-    params: { location, system_size: systemSize },
-  });
-  return res.data;
+export async function fetchForecast({ location, systemSize }, attempts = 3) {
+  return retryRequest(
+    () =>
+      api
+        .get("/forecast", { params: { location, system_size: systemSize } })
+        .then((r) => r.data),
+    attempts
+  );
 }
 
 // Used by 3D weather scene – live weather by coordinates

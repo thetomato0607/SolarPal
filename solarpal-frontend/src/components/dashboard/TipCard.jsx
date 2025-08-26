@@ -10,8 +10,22 @@ export default function TipCard({ userId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!userId) return;
+    try {
+      setLoading(true);
+      setError("");
+      const res = await fetch(`http://localhost:8000/tips?user_id=${userId}`);
+      const data = await res.json();
+      setTip(data.tip ?? "No tip available right now.");
+    } catch (e) {
+      console.warn("Failed to load tip:", e);
+      setError("Couldn’t fetch your solar tip.");
+      setTip(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
     const loadTip = async () => {
       try {
@@ -37,8 +51,12 @@ export default function TipCard({ userId }) {
       {loading ? (
         <p>Loading tip…</p>
       ) : error ? (
-        <p>⚠️ Couldn’t fetch your solar tip.</p>
-        <p>⚠️ {error}</p>
+        <div>
+          <p>⚠️ {error}</p>
+          <Button style={{ marginTop: 8 }} onClick={load}>
+            Retry
+          </Button>
+        </div>
       ) : (
         <p>{tip}</p>
       )}
