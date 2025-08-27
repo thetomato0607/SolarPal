@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { fetchRoi } from "../services/solarApi";
 
 /**
  * Fetches ROI information for the user.
@@ -14,36 +15,24 @@ export default function useRoi(userId) {
   const [loading, setLoading] = useState(Boolean(userId));
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!userId) return;
-
-    let cancelled = false;
-
-    async function fetchRoi() {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`http://localhost:8000/roi?user_id=${userId}`);
-        if (!res.ok) throw new Error("Failed to fetch ROI data");
-        const data = await res.json();
-        if (!cancelled) {
-          setRoi(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err);
-          setRoi(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchRoi(userId);
+      setRoi(data);
+    } catch (err) {
+      setError(err);
+      setRoi(null);
+    } finally {
+      setLoading(false);
     }
-
-    fetchRoi();
-    return () => {
-      cancelled = true;
-    };
   }, [userId]);
 
-  return { roi, loading, error };
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { roi, loading, error, retry: load };
 }
