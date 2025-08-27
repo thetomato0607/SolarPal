@@ -20,6 +20,7 @@ export default function WeeklyEnergyChart({ userId, systemSize }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [isNarrow, setIsNarrow] = useState(false);
+  const [isPhone, setIsPhone] = useState(false);
   const [isShort, setIsShort] = useState(false);
 
   const load = async () => {
@@ -44,15 +45,20 @@ export default function WeeklyEnergyChart({ userId, systemSize }) {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    const mqPhone = window.matchMedia("(max-width: 375px)");
     const mqWidth = window.matchMedia("(max-width: 500px)");
     const mqHeight = window.matchMedia("(max-height: 400px)");
+    const phoneHandler = (e) => setIsPhone(e.matches);
     const widthHandler = (e) => setIsNarrow(e.matches);
     const heightHandler = (e) => setIsShort(e.matches);
+    phoneHandler(mqPhone);
     widthHandler(mqWidth);
     heightHandler(mqHeight);
+    mqPhone.addEventListener("change", phoneHandler);
     mqWidth.addEventListener("change", widthHandler);
     mqHeight.addEventListener("change", heightHandler);
     return () => {
+      mqPhone.removeEventListener("change", phoneHandler);
       mqWidth.removeEventListener("change", widthHandler);
       mqHeight.removeEventListener("change", heightHandler);
     };
@@ -89,7 +95,10 @@ export default function WeeklyEnergyChart({ userId, systemSize }) {
       {!loading && !err && chartData.length === 0 && <p>No forecast available.</p>}
 
       {!loading && !err && chartData.length > 0 && (
-        <ResponsiveContainer width="100%" height={isShort ? 160 : isNarrow ? 200 : 260}>
+        <ResponsiveContainer
+          width="100%"
+          height={isShort ? 160 : isPhone ? 180 : isNarrow ? 200 : 260}
+        >
           <AreaChart data={chartData} margin={{ top: 10, right: 16, bottom: 0, left: -10 }}>
               <defs>
                 <linearGradient id="kwhGrad" x1="0" y1="0" x2="0" y2="1">

@@ -101,8 +101,8 @@ function Dashboard({ data, onReset }) {
     <CloudBackground>
       <Header onReset={onReset} />
 
-      <main className="mx-auto max-w-screen-lg px-4 mt-3 mb-10">
-        <h1 className="mb-2 text-[28px]">Dashboard</h1>
+      <main className="mx-auto max-w-screen-lg px-4 mt-3 mb-10 space-y-4 md:space-y-6">
+        <h1 className="mb-2 text-2xl md:text-[28px]">Dashboard</h1>
 
         {/* Summary + current weather */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -137,7 +137,7 @@ function Dashboard({ data, onReset }) {
 
         {/* Interactive 3D house + weather animations */}
         <ErrorBoundary>
-          <Card style={{ marginTop: 12, padding: 0 }}>
+          <Card style={{ padding: 0 }}>
             <HouseScene height={380} forecast={forecast} weather={weather} />
           </Card>
         </ErrorBoundary>
