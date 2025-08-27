@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchTip } from "../services/solarApi";
 
 /**
  * Retrieves a personalised solar tip for the user.
@@ -19,14 +20,13 @@ export default function useTip(userId) {
 
     let cancelled = false;
 
-    async function fetchTip() {
+    async function loadTip() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`http://localhost:8000/tips?user_id=${userId}`);
-        const data = await res.json();
+        const tipText = await fetchTip(userId);
         if (!cancelled) {
-          setTip(data.tip ?? "No tip available right now.");
+          setTip(tipText ?? "No tip available right now.");
         }
       } catch (err) {
         if (!cancelled) {
@@ -38,7 +38,7 @@ export default function useTip(userId) {
       }
     }
 
-    fetchTip();
+    loadTip();
     return () => {
       cancelled = true;
     };
