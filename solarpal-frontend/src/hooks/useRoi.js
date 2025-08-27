@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchRoi } from "../services/solarApi";
 
 /**
  * Fetches ROI information for the user.
@@ -19,13 +20,11 @@ export default function useRoi(userId) {
 
     let cancelled = false;
 
-    async function fetchRoi() {
+    async function loadRoi() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`http://localhost:8000/roi?user_id=${userId}`);
-        if (!res.ok) throw new Error("Failed to fetch ROI data");
-        const data = await res.json();
+        const data = await fetchRoi(userId);
         if (!cancelled) {
           setRoi(data);
         }
@@ -39,7 +38,7 @@ export default function useRoi(userId) {
       }
     }
 
-    fetchRoi();
+    loadRoi();
     return () => {
       cancelled = true;
     };

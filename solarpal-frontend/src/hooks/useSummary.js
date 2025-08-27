@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fetchSummary } from "../services/solarApi";
 
 /**
  * Fetches the system summary for a given user.
@@ -19,14 +20,13 @@ export default function useSummary(userId) {
 
     let cancelled = false;
 
-    async function fetchSummary() {
+    async function loadSummary() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`http://localhost:8000/summary?user_id=${userId}`);
-        const data = await res.json();
+        const data = await fetchSummary(userId);
         if (!cancelled) {
-          setSummary(data.summary ?? data);
+          setSummary(data);
         }
       } catch (err) {
         if (!cancelled) {
@@ -38,7 +38,7 @@ export default function useSummary(userId) {
       }
     }
 
-    fetchSummary();
+    loadSummary();
     return () => {
       cancelled = true;
     };
