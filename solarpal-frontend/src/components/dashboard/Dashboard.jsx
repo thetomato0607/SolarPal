@@ -132,6 +132,7 @@ function Dashboard({ data, onReset }) {
           <WeeklyEnergyChart
             userId={summary.user_id}
             systemSize={summary.system_size_kw ?? 5}
+            forecast={forecast}
           />
         </ErrorBoundary>
 
