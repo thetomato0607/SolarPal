@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { fetchTip } from "../services/solarApi";
 
@@ -28,6 +29,7 @@ export default function useTip(userId) {
     } finally {
       setLoading(false);
     }
+
   }, [userId]);
 
   useEffect(() => {

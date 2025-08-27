@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { fetchRoi } from "../services/solarApi";
 
@@ -17,6 +18,7 @@ export default function useRoi(userId) {
 
   const load = useCallback(async () => {
     if (!userId) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -28,6 +30,7 @@ export default function useRoi(userId) {
     } finally {
       setLoading(false);
     }
+
   }, [userId]);
 
   useEffect(() => {

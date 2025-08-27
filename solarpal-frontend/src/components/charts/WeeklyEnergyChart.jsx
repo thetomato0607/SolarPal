@@ -15,9 +15,11 @@ import {
 // If you prefer to call the backend via your service wrapper:
 import { fetchForecast } from "../../services/solarApi";
 
-export default function WeeklyEnergyChart({ userId, systemSize }) {
-  const [daily, setDaily] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function WeeklyEnergyChart({ userId, systemSize, forecast }) {
+  const [daily, setDaily] = useState(
+    () => (Array.isArray(forecast?.daily) ? forecast.daily : [])
+  );
+  const [loading, setLoading] = useState(!Array.isArray(forecast?.daily));
   const [err, setErr] = useState("");
   const [isNarrow, setIsNarrow] = useState(false);
   const [isShort, setIsShort] = useState(false);
@@ -39,8 +41,13 @@ export default function WeeklyEnergyChart({ userId, systemSize }) {
   };
 
   useEffect(() => {
-    load();
-  }, [userId, systemSize]);
+    if (Array.isArray(forecast?.daily)) {
+      setDaily(forecast.daily);
+      setLoading(false);
+    } else {
+      load();
+    }
+  }, [userId, systemSize, forecast]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

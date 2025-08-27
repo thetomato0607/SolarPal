@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 import { fetchSummary } from "../services/solarApi";
 
@@ -28,6 +29,7 @@ export default function useSummary(userId) {
     } finally {
       setLoading(false);
     }
+
   }, [userId]);
 
   useEffect(() => {
