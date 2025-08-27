@@ -16,28 +16,47 @@ api.interceptors.response.use(
   }
 );
 
+async function retryRequest(fn, attempts = 3, delay = 500) {
+  try {
+    return await fn();
+  } catch (err) {
+    if (attempts <= 1) throw err;
+    await new Promise((r) => setTimeout(r, delay));
+    return retryRequest(fn, attempts - 1, delay * 2);
+  }
+}
+
 // Used by Onboarding and Dashboard summary card
-export async function fetchSummary(userId) {
-  const res = await api.get("/summary", {
-    params: { user_id: userId },
-  });
-  return res.data?.summary ?? res.data;
+export async function fetchSummary(userId, attempts = 3) {
+  return retryRequest(
+    () =>
+      api
+        .get("/summary", { params: { user_id: userId } })
+        .then((r) => r.data?.summary ?? r.data),
+    attempts
+  );
 }
 
 // Dashboard – helpful solar tip for the user
-export async function fetchTip(userId) {
-  const res = await api.get("/tips", {
-    params: { user_id: userId },
-  });
-  return res.data?.tip ?? res.data;
+export async function fetchTip(userId, attempts = 3) {
+  return retryRequest(
+    () =>
+      api
+        .get("/tips", { params: { user_id: userId } })
+        .then((r) => r.data?.tip ?? r.data),
+    attempts
+  );
 }
 
 // Dashboard – ROI metrics
-export async function fetchRoi(userId) {
-  const res = await api.get("/roi", {
-    params: { user_id: userId },
-  });
-  return res.data;
+export async function fetchRoi(userId, attempts = 3) {
+  return retryRequest(
+    () =>
+      api
+        .get("/roi", { params: { user_id: userId } })
+        .then((r) => r.data),
+    attempts
+  );
 }
 
 // Used by Dashboard – solar forecast for charts / future use
@@ -52,9 +71,11 @@ export async function fetchForecast({ location, systemSize }, attempts = 3) {
 }
 
 // Used by 3D weather scene – live weather by coordinates
-export async function getWeather({ lat, lon, units }) {
-  const res = await api.get("/weather", { params: { lat, lon, units } });
-  return res.data;
+export async function getWeather({ lat, lon, units }, attempts = 3) {
+  return retryRequest(
+    () => api.get("/weather", { params: { lat, lon, units } }).then((r) => r.data),
+    attempts
+  );
 }
 
 export function normalizeWeather(openWeatherJson) {

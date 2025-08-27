@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useCallback, useEffect, useState } from "react";
 import { fetchSummary } from "../services/solarApi";
 
 /**
@@ -15,34 +16,25 @@ export default function useSummary(userId) {
   const [loading, setLoading] = useState(Boolean(userId));
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!userId) return;
-
-    let cancelled = false;
-
-    async function loadSummary() {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await fetchSummary(userId);
-        if (!cancelled) {
-          setSummary(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err);
-          setSummary(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchSummary(userId);
+      setSummary(data);
+    } catch (err) {
+      setError(err);
+      setSummary(null);
+    } finally {
+      setLoading(false);
     }
 
-    loadSummary();
-    return () => {
-      cancelled = true;
-    };
   }, [userId]);
 
-  return { summary, loading, error };
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { summary, loading, error, retry: load };
 }

@@ -1,9 +1,9 @@
 import Card from "../ui/Card";
-
+import Button from "../ui/Button";
 import useSummary from "../../hooks/useSummary";
 
 export default function SummaryCard({ userId }) {
-  const { summary, loading, error } = useSummary(userId);
+  const { summary, loading, error, retry } = useSummary(userId);
 
   return (
     <Card>
@@ -11,12 +11,15 @@ export default function SummaryCard({ userId }) {
       {loading ? (
         <p>Loading summary…</p>
       ) : error ? (
-
-        <p>⚠️ {error?.message || "Couldn’t fetch your summary."}</p>
+        <div>
+          <p>⚠️ {error?.message || "Couldn’t fetch your summary."}</p>
+          <Button style={{ marginTop: 8 }} onClick={retry}>
+            Retry
+          </Button>
+        </div>
       ) : !summary ? (
         <p>⚠️ Couldn’t fetch your summary.</p>
       ) : (
-
         <ul style={{ lineHeight: 1.6 }}>
           <li>
             <b>User ID:</b> {summary.user_id}
@@ -34,8 +37,6 @@ export default function SummaryCard({ userId }) {
             <b>Message:</b> {summary.message}
           </li>
         </ul>
-      ) : (
-        <p>⚠️ Couldn’t fetch your summary.</p>
       )}
     </Card>
   );

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useCallback, useEffect, useState } from "react";
 import { fetchTip } from "../services/solarApi";
 
 /**
@@ -15,34 +16,25 @@ export default function useTip(userId) {
   const [loading, setLoading] = useState(Boolean(userId));
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!userId) return;
-
-    let cancelled = false;
-
-    async function loadTip() {
-      try {
-        setLoading(true);
-        setError(null);
-        const tipText = await fetchTip(userId);
-        if (!cancelled) {
-          setTip(tipText ?? "No tip available right now.");
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err);
-          setTip(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchTip(userId);
+      setTip(data ?? "No tip available right now.");
+    } catch (err) {
+      setError(err);
+      setTip(null);
+    } finally {
+      setLoading(false);
     }
 
-    loadTip();
-    return () => {
-      cancelled = true;
-    };
   }, [userId]);
 
-  return { tip, loading, error };
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  return { tip, loading, error, retry: load };
 }

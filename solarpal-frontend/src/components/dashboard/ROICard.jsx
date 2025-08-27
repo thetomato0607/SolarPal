@@ -1,15 +1,9 @@
 import Card from "../ui/Card";
+import Button from "../ui/Button";
 import useRoi from "../../hooks/useRoi";
 
-// Assumes backend /roi endpoint returns {
-//   installCost: number,       // upfront cost in GBP
-//   annualSaving: number,      // yearly energy generation in kWh
-//   tariff: number             // feed-in tariff in GBP per kWh
-// }
-// A simple ROI is calculated as:
-//   paybackYears = installCost / (annualSaving * tariff)
-// ROI% is the yearly return relative to install cost.
 export default function ROICard({ userId }) {
+
   const { roi, loading, error } = useRoi(userId);
 
   const annualReturn = roi?.annualSaving * roi?.tariff;
