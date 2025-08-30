@@ -139,7 +139,7 @@ function Dashboard({ data, onReset }) {
         {/* Interactive 3D house + weather animations */}
         <ErrorBoundary>
           <Card style={{ padding: 0 }}>
-            <HouseScene height={380} forecast={forecast} weather={weather} />
+            <HouseScene height={380} weather={weather} />
           </Card>
         </ErrorBoundary>
 
