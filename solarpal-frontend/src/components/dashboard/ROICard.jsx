@@ -1,5 +1,4 @@
 import Card from "../ui/Card";
-import Button from "../ui/Button";
 import useRoi from "../../hooks/useRoi";
 
 export default function ROICard({ userId }) {
