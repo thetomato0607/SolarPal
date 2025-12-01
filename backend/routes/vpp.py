@@ -11,15 +11,13 @@ from datetime import datetime, timedelta
 import sys
 import os
 
-# Add parent directory to path for imports
+# Add parent directory to path for imports (single source of truth)
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from vpp_engine import (
-    VPPOptimizer,
-    generate_uk_price_profile,
-    generate_load_profile,
-    calculate_grid_impact
-)
+# Import from modules/ (consolidated optimization logic)
+from modules.optimization import BatteryOptimizer, BatteryAsset
+from modules.market_data import MarketDataGenerator
+from modules.grid_physics import GridConstraintChecker
 
 router = APIRouter()
 
@@ -51,20 +49,24 @@ def optimize_vpp(
     try:
         N = len(solar_forecast_kw)
 
-        # Generate default load profile if not provided
-        if load_forecast_kw is None:
-            load_forecast_kw = generate_load_profile(
-                start_time=datetime.now(),
-                intervals=N,
-                daily_kwh=10.0
-            )
+        # Generate default load/price profiles if not provided
+        market_gen = MarketDataGenerator()
 
-        # Generate UK price profile if not provided
-        if price_forecast_gbp_kwh is None:
-            price_forecast_gbp_kwh = generate_uk_price_profile(
-                start_time=datetime.now(),
+        if load_forecast_kw is None:
+            scenario = market_gen.generate_scenario(
+                system_size_kwp=1.0,
+                daily_load_kwh=10.0,
                 intervals=N
             )
+            load_forecast_kw = scenario.load_kw
+
+        if price_forecast_gbp_kwh is None:
+            scenario = market_gen.generate_scenario(
+                system_size_kwp=1.0,
+                daily_load_kwh=10.0,
+                intervals=N
+            )
+            price_forecast_gbp_kwh = scenario.price_gbp_kwh
 
         # Validate inputs
         if len(load_forecast_kw) != N or len(price_forecast_gbp_kwh) != N:
@@ -73,32 +75,42 @@ def optimize_vpp(
                 detail="All forecasts must have the same length"
             )
 
-        # Initialize optimizer
-        optimizer = VPPOptimizer(
-            battery_capacity_kwh=battery_capacity_kwh,
-            battery_power_kw=battery_power_kw,
-            battery_efficiency=0.90,
-            grid_export_limit_kw=grid_export_limit_kw,
-            timestep_hours=0.25
-        )
-
-        # Run optimization
-        result = optimizer.optimize(
-            solar_kw=solar_forecast_kw,
-            load_kw=load_forecast_kw,
-            price_gbp_per_kwh=price_forecast_gbp_kwh,
+        # Initialize optimizer (single source of truth)
+        optimizer = BatteryOptimizer(timestep_minutes=15)
+        asset = BatteryAsset(
+            capacity_kwh=battery_capacity_kwh,
+            power_kw=battery_power_kw,
+            efficiency=0.90,
             initial_soc_pct=initial_soc_pct
         )
 
-        # Calculate grid impact
-        grid_impact = calculate_grid_impact(
-            grid_export_kw=result['grid_export_kw'],
-            grid_limit_kw=grid_export_limit_kw
+        # Run optimization with degradation cost
+        result = optimizer.optimize(
+            asset=asset,
+            solar_kw=solar_forecast_kw,
+            load_kw=load_forecast_kw,
+            price_gbp_kwh=price_forecast_gbp_kwh,
+            grid_export_limit_kw=grid_export_limit_kw
         )
 
-        # Return combined result
+        # Calculate grid impact
+        grid_checker = GridConstraintChecker(grid_export_limit_kw=grid_export_limit_kw)
+        grid_impact = grid_checker.check_violations(result.grid_export_kw)
+
+        # Return combined result (convert dataclass to dict)
         return {
-            "optimization": result,
+            "optimization": {
+                "charge_schedule_kw": result.charge_schedule_kw,
+                "discharge_schedule_kw": result.discharge_schedule_kw,
+                "soc_trajectory_pct": result.soc_trajectory_pct,
+                "grid_export_kw": result.grid_export_kw,
+                "revenue_gbp": result.revenue_gbp,
+                "cost_gbp": result.cost_gbp,
+                "net_profit_gbp": result.net_profit_gbp,
+                "sharpe_ratio": result.sharpe_ratio,
+                "solver_status": result.solver_status,
+                "solve_time_ms": result.solve_time_ms
+            },
             "grid_impact": grid_impact,
             "inputs": {
                 "intervals": N,

@@ -81,10 +81,11 @@ class BatteryOptimizer:
         solar_kw: List[float],
         load_kw: List[float],
         price_gbp_kwh: List[float],
-        grid_export_limit_kw: float = 4.0
+        grid_export_limit_kw: float = 4.0,
+        degradation_cost_gbp_kwh: float = 0.05
     ) -> OptimizationResult:
         """
-        Solve optimal battery schedule.
+        Solve optimal battery schedule with degradation cost.
 
         Args:
             asset: Battery configuration
@@ -92,6 +93,7 @@ class BatteryOptimizer:
             load_kw: Load forecast (kW) per interval
             price_gbp_kwh: Electricity price (GBP/kWh) per interval
             grid_export_limit_kw: Maximum grid export (DNO limit)
+            degradation_cost_gbp_kwh: Battery wear cost per kWh cycled (default: £0.05)
 
         Returns:
             OptimizationResult with schedule and performance metrics
@@ -107,13 +109,17 @@ class BatteryOptimizer:
         # Decision variables: [charge_0..N-1, discharge_0..N-1, soc_0..N]
         # Total: 3*N + 1 variables
 
-        # Objective: Maximize revenue = Σ(grid_export × price × dt)
+        # Objective: Maximize revenue = Σ(grid_export × price × dt) - Σ(cycles × degradation_cost)
         # grid_export = solar - load + discharge - charge
-        # Minimize negative revenue
+        # Minimize negative revenue (with degradation penalty)
         c = np.zeros(3*N + 1)
         for t in range(N):
-            c[t] = price[t] * self.timestep_hours          # Charge reduces revenue
-            c[N + t] = -price[t] * self.timestep_hours     # Discharge increases revenue
+            # Charging costs: Electricity price + Degradation wear
+            c[t] = (price[t] + degradation_cost_gbp_kwh) * self.timestep_hours
+
+            # Discharging revenue: Electricity price - Degradation wear
+            # Battery only trades if profit > degradation cost (realistic behavior)
+            c[N + t] = -(price[t] - degradation_cost_gbp_kwh) * self.timestep_hours
 
         # Inequality constraints: A_ub @ x <= b_ub
         A_ub = []
