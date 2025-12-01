@@ -5,66 +5,73 @@ Verifies that the VPP engine is properly integrated and working.
 """
 
 import sys
-from datetime import datetime
 
 
 def test_vpp_engine():
-    """Test VPP optimizer core functionality."""
+    """Test VPP optimizer core functionality (using consolidated modules)."""
     print("\n" + "="*70)
     print("TEST 1: VPP Engine Import & Optimization")
     print("="*70)
 
     try:
-        from vpp_engine import VPPOptimizer, generate_uk_price_profile, generate_load_profile
+        # Import from consolidated modules (single source of truth)
+        sys.path.insert(0, '..')
+        from modules.optimization import BatteryOptimizer, BatteryAsset
+        from modules.market_data import MarketDataGenerator
 
-        # Create optimizer
-        optimizer = VPPOptimizer(
-            battery_capacity_kwh=13.5,
-            battery_power_kw=5.0,
-            battery_efficiency=0.90,
-            grid_export_limit_kw=4.0
+        print("[PASS] Modules imported (DRY-compliant structure)")
+
+        # Generate market scenario
+        market_gen = MarketDataGenerator()
+        scenario = market_gen.generate_scenario(
+            system_size_kwp=2.5,
+            daily_load_kwh=10.0,
+            volatility_multiplier=1.0,
+            cloud_cover_factor=0.3,
+            intervals=96
         )
-        print("[PASS] VPP optimizer instantiated")
+        print(f"[PASS] Generated {len(scenario.solar_kw)} intervals of test data")
 
-        # Generate test data
-        N = 96
-        start_time = datetime(2025, 12, 1, 0, 0)
-
-        import numpy as np
-        hours = np.array([(start_time.hour + i*0.25) for i in range(N)])
-        solar_kw = (2.5 * np.exp(-((hours - 12)**2) / (2 * 2.5**2))).tolist()
-        load_kw = generate_load_profile(start_time, N, 10.0)
-        price_gbp_kwh = generate_uk_price_profile(start_time, N)
-
-        print(f"[PASS] Generated {N} intervals of test data")
-
-        # Run optimization
-        result = optimizer.optimize(
-            solar_kw=solar_kw,
-            load_kw=load_kw,
-            price_gbp_per_kwh=price_gbp_kwh,
+        # Create battery asset
+        asset = BatteryAsset(
+            capacity_kwh=13.5,
+            power_kw=5.0,
+            efficiency=0.90,
             initial_soc_pct=50.0
+        )
+        print("[PASS] Battery asset created")
+
+        # Create optimizer and run
+        optimizer = BatteryOptimizer(timestep_minutes=15)
+        result = optimizer.optimize(
+            asset=asset,
+            solar_kw=scenario.solar_kw,
+            load_kw=scenario.load_kw,
+            price_gbp_kwh=scenario.price_gbp_kwh,
+            grid_export_limit_kw=4.0
         )
 
         print(f"[PASS] Optimization completed successfully")
-        print(f"  Revenue: {result['revenue_gbp']:.2f} GBP")
-        print(f"  Cost: {result['energy_cost_gbp']:.2f} GBP")
-        print(f"  Net Profit: {result['net_profit_gbp']:.2f} GBP")
+        print(f"  Revenue: {result.revenue_gbp:.2f} GBP")
+        print(f"  Cost: {result.cost_gbp:.2f} GBP")
+        print(f"  Net Profit: {result.net_profit_gbp:.2f} GBP")
+        print(f"  Sharpe Ratio: {result.sharpe_ratio:.2f}")
 
         # Verify constraints
-        max_export = max(result['grid_export_kw'])
+        max_export = max(result.grid_export_kw)
+        grid_limit = 4.0
         print(f"\n  Max grid export: {max_export:.3f} kW")
-        print(f"  Grid limit: {optimizer.grid_limit:.3f} kW")
+        print(f"  Grid limit: {grid_limit:.3f} kW")
 
-        if max_export <= optimizer.grid_limit + 1e-6:
-            print(f"[PASS] Grid constraint satisfied: {max_export:.3f} <= {optimizer.grid_limit}")
+        if max_export <= grid_limit + 1e-6:
+            print(f"[PASS] Grid constraint satisfied: {max_export:.3f} <= {grid_limit}")
         else:
             print(f"[FAIL] Grid constraint violated!")
             return False
 
         # Check SoC bounds
-        min_soc = min(result['soc_pct'])
-        max_soc = max(result['soc_pct'])
+        min_soc = min(result.soc_trajectory_pct)
+        max_soc = max(result.soc_trajectory_pct)
         if 0 <= min_soc and max_soc <= 100:
             print(f"[PASS] Battery SoC within bounds: [{min_soc:.1f}%, {max_soc:.1f}%]")
         else:

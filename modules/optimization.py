@@ -22,18 +22,20 @@ class BatteryAsset:
     initial_soc_pct: float    # Starting charge level (%)
 
 
+from .degradation import BatteryDegradationModel
+
 @dataclass
 class OptimizationResult:
     """Trading schedule and performance metrics."""
-    charge_schedule_kw: List[float]      # Power charging per interval (kW)
-    discharge_schedule_kw: List[float]   # Power discharging per interval (kW)
-    soc_trajectory_pct: List[float]      # State of charge over time (%)
-    grid_export_kw: List[float]          # Net grid power (+ = export, - = import)
+    charge_schedule_kw: List[float]
+    discharge_schedule_kw: List[float]
+    soc_trajectory_pct: List[float]
+    grid_export_kw: List[float]
 
     # Financial metrics
-    revenue_gbp: float                    # Total revenue from exports
-    cost_gbp: float                       # Total cost of imports
-    net_profit_gbp: float                 # Net P&L
+    revenue_gbp: float
+    cost_gbp: float
+    net_profit_gbp: float
 
     # Trading metrics
     sharpe_ratio: float                   # Risk-adjusted return
@@ -43,6 +45,11 @@ class OptimizationResult:
     # Solver info
     solver_status: str
     solve_time_ms: float
+
+    # Degradation metrics (with defaults - must come last)
+    degradation_cost_gbp: float = 0.0
+    effective_profit_gbp: float = 0.0  # net_profit - degradation
+    cycle_count: float = 0.0
 
 
 class BatteryOptimizer:
@@ -225,6 +232,23 @@ class BatteryOptimizer:
         max_drawdown = 100 - np.min(soc_kwh / asset.capacity_kwh * 100)
         utilization = np.sum(discharge) * self.timestep_hours / asset.capacity_kwh
 
+        # Calculate degradation cost
+        degradation_model = BatteryDegradationModel(
+            battery_capacity_kwh=asset.capacity_kwh
+        )
+
+        degradation_cost = degradation_model.calculate_degradation_cost(
+            discharge_kw=discharge.tolist(),
+            timestep_hours=self.timestep_hours
+        )
+
+        cycle_count = degradation_model.calculate_cycle_count(
+            discharge_kw=discharge.tolist(),
+            timestep_hours=self.timestep_hours
+        )
+
+        effective_profit = net_profit - degradation_cost
+
         return OptimizationResult(
             charge_schedule_kw=charge.tolist(),
             discharge_schedule_kw=discharge.tolist(),
@@ -237,7 +261,10 @@ class BatteryOptimizer:
             max_drawdown_pct=float(max_drawdown),
             utilization_factor=float(utilization),
             solver_status=result.message,
-            solve_time_ms=float(solve_time)
+            solve_time_ms=float(solve_time),
+            degradation_cost_gbp=float(degradation_cost),
+            effective_profit_gbp=float(effective_profit),
+            cycle_count=float(cycle_count)
         )
 
     def _calculate_sharpe(self, discharge: List[float], price: List[float]) -> float:

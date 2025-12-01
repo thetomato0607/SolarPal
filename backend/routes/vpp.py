@@ -5,14 +5,14 @@ FastAPI routes for VPP optimization and analysis.
 """
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
 from typing import List
-from datetime import datetime, timedelta
 import sys
 import os
 
-# Add parent directory to path for imports (single source of truth)
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add project root to path for imports (single source of truth)
+# This file is in backend/routes/, so go up 2 levels to reach project root
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
 
 # Import from modules/ (consolidated optimization logic)
 from modules.optimization import BatteryOptimizer, BatteryAsset
@@ -129,14 +129,17 @@ def simulate_vpp_day(
     system_size_kwp: float = 3.0,
     daily_load_kwh: float = 10.0,
     battery_capacity_kwh: float = 13.5,
+    battery_power_kw: float = 5.0,
     grid_export_limit_kw: float = 4.0,
-    include_charts: bool = False
+    initial_soc_pct: float = 50.0,
+    volatility_multiplier: float = 1.0,
+    cloud_cover_factor: float = 0.3
 ):
     """
     Run a full 24-hour VPP simulation with synthetic data.
 
     This endpoint generates realistic solar, load, and price profiles
-    then optimizes battery operation.
+    then optimizes battery operation using the DRY-compliant modules.
 
     Example: GET /vpp/simulate?system_size_kwp=4.0&daily_load_kwh=12
 
@@ -144,73 +147,78 @@ def simulate_vpp_day(
         Complete simulation results with optimization and grid analysis
     """
     try:
-        # Generate synthetic solar profile (96 intervals = 24h @ 15min)
-        start_time = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        N = 96
+        # Generate market scenario using consolidated module
+        market_gen = MarketDataGenerator()
+        scenario = market_gen.generate_scenario(
+            system_size_kwp=system_size_kwp,
+            daily_load_kwh=daily_load_kwh,
+            volatility_multiplier=volatility_multiplier,
+            cloud_cover_factor=cloud_cover_factor,
+            intervals=96
+        )
 
-        # Solar generation (Gaussian curve peaking at noon)
-        hours = [(start_time + timedelta(hours=i*0.25)).hour +
-                (start_time + timedelta(hours=i*0.25)).minute / 60
-                for i in range(N)]
+        # Create battery asset
+        asset = BatteryAsset(
+            capacity_kwh=battery_capacity_kwh,
+            power_kw=battery_power_kw,
+            efficiency=0.90,
+            initial_soc_pct=initial_soc_pct
+        )
 
-        import numpy as np
-        solar_base = system_size_kwp * 0.85 * np.exp(-((np.array(hours) - 12)**2) / (2 * 2.5**2))
-        np.random.seed(42)
-        cloud_factor = np.clip(1 + np.random.normal(0, 0.2, N), 0.3, 1.0)
-        solar_kw = (np.maximum(0, solar_base) * cloud_factor).tolist()
-
-        # Generate load and price profiles
-        load_kw = generate_load_profile(start_time, N, daily_load_kwh)
-        price_gbp_kwh = generate_uk_price_profile(start_time, N)
-
-        # Run optimization
-        optimizer = VPPOptimizer(
-            battery_capacity_kwh=battery_capacity_kwh,
-            battery_power_kw=5.0,
-            battery_efficiency=0.90,
+        # Run optimization (single source of truth)
+        optimizer = BatteryOptimizer(timestep_minutes=15)
+        result = optimizer.optimize(
+            asset=asset,
+            solar_kw=scenario.solar_kw,
+            load_kw=scenario.load_kw,
+            price_gbp_kwh=scenario.price_gbp_kwh,
             grid_export_limit_kw=grid_export_limit_kw
         )
 
-        result = optimizer.optimize(
-            solar_kw=solar_kw,
-            load_kw=load_kw,
-            price_gbp_per_kwh=price_gbp_kwh,
-            initial_soc_pct=50.0
-        )
-
-        # Grid impact
-        grid_impact = calculate_grid_impact(
-            grid_export_kw=result['grid_export_kw'],
-            grid_limit_kw=grid_export_limit_kw
-        )
+        # Calculate grid impact
+        grid_checker = GridConstraintChecker(grid_export_limit_kw=grid_export_limit_kw)
+        grid_impact = grid_checker.check_violations(result.grid_export_kw)
 
         # Compile response
-        response = {
-            "simulation_date": start_time.isoformat(),
+        return {
+            "simulation_date": scenario.timestamps[0].isoformat(),
             "inputs": {
                 "system_size_kwp": system_size_kwp,
                 "daily_load_kwh": daily_load_kwh,
                 "battery_capacity_kwh": battery_capacity_kwh,
-                "grid_export_limit_kw": grid_export_limit_kw
+                "battery_power_kw": battery_power_kw,
+                "grid_export_limit_kw": grid_export_limit_kw,
+                "volatility_multiplier": volatility_multiplier,
+                "cloud_cover_factor": cloud_cover_factor
             },
             "forecasts": {
-                "solar_kw": solar_kw,
-                "load_kw": load_kw,
-                "price_gbp_kwh": price_gbp_kwh
+                "solar_kw": scenario.solar_kw,
+                "load_kw": scenario.load_kw,
+                "price_gbp_kwh": scenario.price_gbp_kwh
             },
-            "optimization": result,
+            "optimization": {
+                "charge_schedule_kw": result.charge_schedule_kw,
+                "discharge_schedule_kw": result.discharge_schedule_kw,
+                "soc_trajectory_pct": result.soc_trajectory_pct,
+                "grid_export_kw": result.grid_export_kw,
+                "revenue_gbp": result.revenue_gbp,
+                "cost_gbp": result.cost_gbp,
+                "net_profit_gbp": result.net_profit_gbp,
+                "sharpe_ratio": result.sharpe_ratio,
+                "utilization_factor": result.utilization_factor,
+                "solver_status": result.solver_status,
+                "solve_time_ms": result.solve_time_ms
+            },
             "grid_impact": grid_impact,
             "summary": {
-                "daily_revenue_gbp": result['revenue_gbp'],
-                "daily_cost_gbp": result['energy_cost_gbp'],
-                "net_profit_gbp": result['net_profit_gbp'],
-                "battery_cycles": sum(result['battery_discharge_kw']) * 0.25 / battery_capacity_kwh,
-                "max_grid_export_kw": max(result['grid_export_kw']),
+                "daily_revenue_gbp": result.revenue_gbp,
+                "daily_cost_gbp": result.cost_gbp,
+                "net_profit_gbp": result.net_profit_gbp,
+                "battery_cycles": result.utilization_factor,
+                "max_grid_export_kw": max(result.grid_export_kw),
                 "grid_compliant": grid_impact['g99_compliant']
             }
         }
-
-        return response
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -219,12 +227,16 @@ def simulate_vpp_day(
 @router.get("/benchmark")
 def benchmark_vpp(
     system_size_kwp: float = 3.0,
-    battery_capacity_kwh: float = 13.5
+    battery_capacity_kwh: float = 13.5,
+    battery_power_kw: float = 5.0,
+    daily_load_kwh: float = 10.0,
+    grid_export_limit_kw: float = 4.0
 ):
     """
     Compare VPP optimization vs. baseline (no battery).
 
-    Shows the economic value of the battery system.
+    Shows the economic value of the battery system using the
+    consolidated module architecture.
 
     Example: GET /vpp/benchmark?system_size_kwp=4.0&battery_capacity_kwh=10.0
 
@@ -232,65 +244,63 @@ def benchmark_vpp(
         Comparison of scenarios with financial impact
     """
     try:
-        import numpy as np
-        start_time = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        N = 96
-
-        # Generate profiles
-        hours = [(start_time + timedelta(hours=i*0.25)).hour +
-                (start_time + timedelta(hours=i*0.25)).minute / 60
-                for i in range(N)]
-
-        solar_base = system_size_kwp * 0.85 * np.exp(-((np.array(hours) - 12)**2) / (2 * 2.5**2))
-        np.random.seed(42)
-        solar_kw = np.maximum(0, solar_base * np.clip(1 + np.random.normal(0, 0.2, N), 0.3, 1.0))
-
-        load_kw = np.array(generate_load_profile(start_time, N, 10.0))
-        price_gbp_kwh = np.array(generate_uk_price_profile(start_time, N))
-
-        # Scenario 1: No battery (baseline)
-        grid_no_battery = solar_kw - load_kw
-        import_no_battery = np.maximum(0, -grid_no_battery)
-        export_no_battery = np.maximum(0, grid_no_battery)
-
-        cost_no_battery = np.sum(import_no_battery * price_gbp_kwh * 0.25)
-        revenue_no_battery = np.sum(export_no_battery * price_gbp_kwh * 0.5 * 0.25)  # 50% export tariff
-        net_no_battery = revenue_no_battery - cost_no_battery
-
-        # Scenario 2: With VPP optimization
-        optimizer = VPPOptimizer(
-            battery_capacity_kwh=battery_capacity_kwh,
-            battery_power_kw=5.0,
-            battery_efficiency=0.90,
-            grid_export_limit_kw=4.0
+        # Generate market scenario
+        market_gen = MarketDataGenerator()
+        scenario = market_gen.generate_scenario(
+            system_size_kwp=system_size_kwp,
+            daily_load_kwh=daily_load_kwh,
+            volatility_multiplier=1.0,
+            cloud_cover_factor=0.3,
+            intervals=96
         )
 
-        result = optimizer.optimize(
-            solar_kw=solar_kw.tolist(),
-            load_kw=load_kw.tolist(),
-            price_gbp_per_kwh=price_gbp_kwh.tolist(),
+        # Import calculate_baseline_cost from optimization module
+        from modules.optimization import calculate_baseline_cost
+
+        # Scenario 1: No battery (baseline)
+        baseline = calculate_baseline_cost(
+            solar_kw=scenario.solar_kw,
+            load_kw=scenario.load_kw,
+            price_gbp_kwh=scenario.price_gbp_kwh
+        )
+
+        # Scenario 2: With VPP optimization
+        asset = BatteryAsset(
+            capacity_kwh=battery_capacity_kwh,
+            power_kw=battery_power_kw,
+            efficiency=0.90,
             initial_soc_pct=50.0
         )
 
+        optimizer = BatteryOptimizer(timestep_minutes=15)
+        result = optimizer.optimize(
+            asset=asset,
+            solar_kw=scenario.solar_kw,
+            load_kw=scenario.load_kw,
+            price_gbp_kwh=scenario.price_gbp_kwh,
+            grid_export_limit_kw=grid_export_limit_kw
+        )
+
         # Calculate savings
-        net_with_vpp = result['net_profit_gbp']
+        net_with_vpp = result.net_profit_gbp
+        net_no_battery = baseline['net_gbp']
         daily_benefit = net_with_vpp - net_no_battery
         annual_benefit = daily_benefit * 365
 
-        # ROI calculation (assuming battery costs £7000)
+        # ROI calculation (Tesla Powerwall cost)
         battery_cost_gbp = 7000
         payback_years = battery_cost_gbp / annual_benefit if annual_benefit > 0 else float('inf')
 
         return {
             "baseline_no_battery": {
-                "daily_cost_gbp": float(cost_no_battery),
-                "daily_revenue_gbp": float(revenue_no_battery),
-                "net_daily_gbp": float(net_no_battery)
+                "daily_cost_gbp": baseline['cost_gbp'],
+                "daily_revenue_gbp": baseline['revenue_gbp'],
+                "net_daily_gbp": baseline['net_gbp']
             },
             "with_vpp_optimization": {
-                "daily_cost_gbp": result['energy_cost_gbp'],
-                "daily_revenue_gbp": result['revenue_gbp'],
-                "net_daily_gbp": result['net_profit_gbp']
+                "daily_cost_gbp": result.cost_gbp,
+                "daily_revenue_gbp": result.revenue_gbp,
+                "net_daily_gbp": result.net_profit_gbp
             },
             "benefit_analysis": {
                 "daily_saving_gbp": float(daily_benefit),

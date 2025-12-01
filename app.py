@@ -219,48 +219,53 @@ if 'result' in st.session_state:
 
     st.markdown("### PERFORMANCE METRICS")
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
 
     with col1:
         st.metric(
-            label="NET PROFIT",
+            label="GROSS PROFIT",
             value=f"£{result.net_profit_gbp:.2f}",
-            delta=f"vs. baseline: +£{result.net_profit_gbp - baseline['net_gbp']:.2f}",
-            delta_color="normal"
+            delta=f"vs. baseline: +£{result.net_profit_gbp - baseline['net_gbp']:.2f}"
         )
 
     with col2:
-        annual_profit = result.net_profit_gbp * 365
-        battery_cost = 7000  # Typical Tesla Powerwall
-        payback = battery_cost / annual_profit if annual_profit > 0 else 999
-        payback_display = f"{payback:.1f} years" if annual_profit > 0 else "N/A"
-        roi_delta = f"ROI: {(annual_profit/battery_cost*100):.1f}%" if annual_profit > 0 else "No payback"
         st.metric(
-            label="PAYBACK PERIOD",
-            value=payback_display,
-            delta=roi_delta
+            label="DEGRADATION",
+            value=f"-£{result.degradation_cost_gbp:.2f}",
+            delta=f"{result.cycle_count:.2f} cycles",
+            delta_color="inverse"
         )
 
     with col3:
         st.metric(
-            label="SHARPE RATIO",
-            value=f"{result.sharpe_ratio:.2f}",
-            delta="Risk-adjusted return"
+            label="NET PROFIT",
+            value=f"£{result.effective_profit_gbp:.2f}",
+            delta="After battery wear"
         )
 
     with col4:
-        violation_status = "COMPLIANT" if grid_analysis['violation_count'] == 0 else f"{grid_analysis['violation_count']} VIOLATIONS"
+        annual_effective = result.effective_profit_gbp * 365
+        battery_cost = 7000
+        payback = battery_cost / annual_effective if annual_effective > 0 else 999
         st.metric(
-            label="GRID COMPLIANCE",
-            value=violation_status,
-            delta=f"Max stress: {grid_analysis['peak_grid_stress']*100:.0f}%"
+            label="PAYBACK PERIOD",
+            value=f"{payback:.1f} years",
+            delta=f"ROI: {(annual_effective/battery_cost*100):.1f}%"
         )
 
     with col5:
         st.metric(
-            label="BATTERY UTILIZATION",
-            value=f"{result.utilization_factor*100:.1f}%",
-            delta=f"Cycles: {result.utilization_factor:.2f}"
+            label="SHARPE RATIO",
+            value=f"{result.sharpe_ratio:.2f}",
+            delta="Risk-adjusted"
+        )
+
+    with col6:
+        violation_status = "PASS" if grid_analysis['violation_count'] == 0 else "FAIL"
+        st.metric(
+            label="GRID STATUS",
+            value=violation_status,
+            delta=f"{grid_analysis['peak_grid_stress']*100:.0f}% stress"
         )
 
     st.markdown("---")
@@ -313,15 +318,23 @@ if 'result' in st.session_state:
 
     with col1:
         st.markdown("#### Financial Summary")
+        annual_cycles = result.cycle_count * 365
+        years_to_warranty = 3650 / annual_cycles if annual_cycles > 0 else 999
         st.markdown(f"""
         | Metric | Value |
         |--------|-------|
         | **Revenue (Export)** | £{result.revenue_gbp:.2f} |
         | **Cost (Import)** | £{result.cost_gbp:.2f} |
-        | **Net Profit** | £{result.net_profit_gbp:.2f} |
+        | **Gross Profit** | £{result.net_profit_gbp:.2f} |
+        | **Battery Degradation** | -£{result.degradation_cost_gbp:.2f} |
+        | **Net Profit** | £{result.effective_profit_gbp:.2f} |
         | **Baseline (No Battery)** | £{baseline['net_gbp']:.2f} |
-        | **Battery Benefit** | £{result.net_profit_gbp - baseline['net_gbp']:.2f} |
-        | **Annual Projection** | £{result.net_profit_gbp * 365:.0f} |
+        | **Battery Benefit** | £{result.effective_profit_gbp - baseline['net_gbp']:.2f} |
+        | **Annual Projection** | £{result.effective_profit_gbp * 365:.0f} |
+        | | |
+        | **Daily Cycles** | {result.cycle_count:.2f} |
+        | **Annual Cycles** | {annual_cycles:.0f} |
+        | **Years to Warranty** | {years_to_warranty:.1f} years |
         """)
 
     with col2:

@@ -1,14 +1,22 @@
 # coding: utf-8
 """
-Market Data Generator
-=====================
-Realistic UK energy market simulation with configurable volatility.
+Market Data Generator (Enhanced with Live Data)
+================================================
+Realistic UK energy market simulation with optional live price fetching.
 """
 
 import numpy as np
 from datetime import datetime, timedelta
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from dataclasses import dataclass
+
+# Import live data API
+try:
+    from .live_data import OctopusEnergyAPI
+    LIVE_DATA_AVAILABLE = True
+except ImportError:
+    LIVE_DATA_AVAILABLE = False
+    print("Warning: live_data module not found. Using synthetic data only.")
 
 
 @dataclass
@@ -23,6 +31,10 @@ class MarketScenario:
     volatility_multiplier: float
     cloud_cover_factor: float
     daily_load_kwh: float
+    
+    # NEW: Data source tracking
+    price_data_source: str = "synthetic"  # "synthetic" or "octopus_agile"
+    price_region: str = None
 
 
 class MarketDataGenerator:
@@ -33,14 +45,25 @@ class MarketDataGenerator:
     - Solar PV generation (with cloud intermittency)
     - Household demand (behavioral patterns)
     - Day-ahead electricity prices (duck curve + volatility)
+    
+    **NEW:** Can fetch REAL UK prices from Octopus Energy Agile API
     """
 
-    def __init__(self, seed: int = 42):
+    def __init__(
+        self, 
+        seed: int = 42, 
+        use_live_prices: bool = False,
+        octopus_region: str = 'A'
+    ):
         """
         Args:
             seed: Random seed for reproducibility
+            use_live_prices: If True, fetch real UK prices from Octopus API
+            octopus_region: UK region code (A-P) for Agile pricing
         """
         self.seed = seed
+        self.use_live_prices = use_live_prices
+        self.octopus_region = octopus_region
         np.random.seed(seed)
 
     def generate_scenario(
@@ -53,7 +76,7 @@ class MarketDataGenerator:
         intervals: int = 96
     ) -> MarketScenario:
         """
-        Generate complete 24-hour scenario.
+        Generate complete 24-hour scenario with optional live price data.
 
         Args:
             system_size_kwp: Solar system size (kWp)
@@ -64,7 +87,7 @@ class MarketDataGenerator:
             intervals: Number of timesteps (96 = 15-min resolution)
 
         Returns:
-            MarketScenario with all profiles
+            MarketScenario with all profiles (live or synthetic prices)
         """
         if start_date is None:
             start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -73,24 +96,47 @@ class MarketDataGenerator:
         timestamps = [start_date + timedelta(minutes=15*i) for i in range(intervals)]
         hours = np.array([ts.hour + ts.minute/60 for ts in timestamps])
 
-        # Generate solar profile
+        # Generate solar profile (always synthetic)
         solar_kw = self._generate_solar(
             hours=hours,
             system_size_kwp=system_size_kwp,
             cloud_factor=cloud_cover_factor
         )
 
-        # Generate load profile
+        # Generate load profile (always synthetic)
         load_kw = self._generate_load(
             hours=hours,
             daily_kwh=daily_load_kwh
         )
 
-        # Generate price profile
-        price_gbp_kwh = self._generate_prices(
-            hours=hours,
-            volatility=volatility_multiplier
-        )
+        # Generate or fetch price profile
+        price_gbp_kwh = None
+        price_source = "synthetic"
+        price_region = None
+        
+        if self.use_live_prices and LIVE_DATA_AVAILABLE:
+            # Try to fetch live prices
+            print(f"Fetching live prices for region {self.octopus_region}...")
+            live_prices = OctopusEnergyAPI.fetch_agile_prices(
+                date=start_date,
+                region=self.octopus_region,
+                hours=24
+            )
+            
+            if live_prices and len(live_prices) >= intervals:
+                price_gbp_kwh = live_prices[:intervals]
+                price_source = "octopus_agile"
+                price_region = self.octopus_region
+                print(f"✅ Using live Octopus Agile prices ({self.octopus_region})")
+            else:
+                print("⚠️  Live prices unavailable, falling back to synthetic")
+        
+        # Fallback to synthetic prices if needed
+        if price_gbp_kwh is None:
+            price_gbp_kwh = self._generate_prices(
+                hours=hours,
+                volatility=volatility_multiplier
+            )
 
         return MarketScenario(
             timestamps=timestamps,
@@ -99,7 +145,9 @@ class MarketDataGenerator:
             price_gbp_kwh=price_gbp_kwh,
             volatility_multiplier=volatility_multiplier,
             cloud_cover_factor=cloud_cover_factor,
-            daily_load_kwh=daily_load_kwh
+            daily_load_kwh=daily_load_kwh,
+            price_data_source=price_source,
+            price_region=price_region
         )
 
     def _generate_solar(
@@ -113,7 +161,7 @@ class MarketDataGenerator:
 
         Uses Gaussian curve peaking at solar noon with:
         - Base curve: Clear-sky irradiance
-        - Cloud noise: Ornstein-Uhlenbeck process
+        - Cloud noise: Random fluctuations
         """
         # Clear-sky profile (Gaussian centered at 12:00)
         peak_capacity_factor = 0.85  # Max output as fraction of rated capacity
@@ -212,3 +260,79 @@ class MarketDataGenerator:
         price = np.maximum(0.01, price)
 
         return price.tolist()
+
+
+# Convenience function for testing
+def compare_live_vs_synthetic():
+    """
+    Compare live Octopus prices with synthetic model.
+    Useful for calibrating synthetic price generator.
+    """
+    print("\n" + "="*70)
+    print("COMPARING LIVE VS SYNTHETIC PRICES")
+    print("="*70)
+    
+    if not LIVE_DATA_AVAILABLE:
+        print("❌ Live data module not available")
+        return
+    
+    # Generate both
+    gen_live = MarketDataGenerator(use_live_prices=True, octopus_region='A')
+    gen_synthetic = MarketDataGenerator(use_live_prices=False)
+    
+    scenario_live = gen_live.generate_scenario()
+    scenario_synthetic = gen_synthetic.generate_scenario()
+    
+    import numpy as np
+    
+    if scenario_live.price_data_source == "octopus_agile":
+        live_prices = np.array(scenario_live.price_gbp_kwh)
+        synth_prices = np.array(scenario_synthetic.price_gbp_kwh)
+        
+        print(f"\nLIVE PRICES (Octopus Agile {scenario_live.price_region}):")
+        print(f"  Min:  £{np.min(live_prices):.4f}/kWh")
+        print(f"  Max:  £{np.max(live_prices):.4f}/kWh")
+        print(f"  Mean: £{np.mean(live_prices):.4f}/kWh")
+        print(f"  Std:  £{np.std(live_prices):.4f}/kWh")
+        
+        print(f"\nSYNTHETIC PRICES:")
+        print(f"  Min:  £{np.min(synth_prices):.4f}/kWh")
+        print(f"  Max:  £{np.max(synth_prices):.4f}/kWh")
+        print(f"  Mean: £{np.mean(synth_prices):.4f}/kWh")
+        print(f"  Std:  £{np.std(synth_prices):.4f}/kWh")
+        
+        # Calculate correlation
+        correlation = np.corrcoef(live_prices, synth_prices)[0, 1]
+        print(f"\nCorrelation: {correlation:.3f}")
+        
+        if correlation > 0.7:
+            print("✅ Synthetic model is well-calibrated")
+        elif correlation > 0.5:
+            print("⚠️  Synthetic model is reasonably calibrated")
+        else:
+            print("❌ Synthetic model needs recalibration")
+    else:
+        print("❌ Could not fetch live prices for comparison")
+    
+    print("="*70 + "\n")
+
+
+if __name__ == "__main__":
+    # Test both modes
+    print("Testing MarketDataGenerator...")
+    
+    # Test 1: Synthetic
+    gen = MarketDataGenerator(use_live_prices=False)
+    scenario = gen.generate_scenario()
+    print(f"✅ Synthetic scenario generated: {len(scenario.price_gbp_kwh)} prices")
+    
+    # Test 2: Live (if available)
+    if LIVE_DATA_AVAILABLE:
+        gen_live = MarketDataGenerator(use_live_prices=True, octopus_region='A')
+        scenario_live = gen_live.generate_scenario()
+        print(f"✅ Live scenario: {scenario_live.price_data_source}")
+        
+        # Compare
+        compare_live_vs_synthetic()
+    else:
+        print("⚠️  Live data module not available, skipping live test")
