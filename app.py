@@ -9,6 +9,7 @@ Bloomberg-style dashboard for grid-connected battery optimization.
 
 import streamlit as st
 import numpy as np
+from dataclasses import asdict
 from modules.optimization import BatteryOptimizer, BatteryAsset, calculate_baseline_cost
 from modules.grid_physics import GridConstraintChecker
 from modules.market_data import MarketDataGenerator
@@ -157,49 +158,53 @@ st.markdown("""
 
 if run_simulation or 'result' not in st.session_state:
     with st.spinner("Running optimization engine..."):
-        # Generate market scenario
-        market_gen = MarketDataGenerator()
-        scenario = market_gen.generate_scenario(
-            system_size_kwp=system_size,
-            daily_load_kwh=daily_load,
-            volatility_multiplier=volatility,
-            cloud_cover_factor=cloud_cover
-        )
+        try:
+            # Generate market scenario
+            market_gen = MarketDataGenerator()
+            scenario = market_gen.generate_scenario(
+                system_size_kwp=system_size,
+                daily_load_kwh=daily_load,
+                volatility_multiplier=volatility,
+                cloud_cover_factor=cloud_cover
+            )
 
-        # Run optimization
-        asset = BatteryAsset(
-            capacity_kwh=battery_capacity,
-            power_kw=battery_power,
-            efficiency=0.90,
-            initial_soc_pct=initial_soc
-        )
+            # Run optimization
+            asset = BatteryAsset(
+                capacity_kwh=battery_capacity,
+                power_kw=battery_power,
+                efficiency=0.90,
+                initial_soc_pct=initial_soc
+            )
 
-        optimizer = BatteryOptimizer(timestep_minutes=15)
-        result = optimizer.optimize(
-            asset=asset,
-            solar_kw=scenario.solar_kw,
-            load_kw=scenario.load_kw,
-            price_gbp_kwh=scenario.price_gbp_kwh,
-            grid_export_limit_kw=grid_limit
-        )
+            optimizer = BatteryOptimizer(timestep_minutes=15)
+            result = optimizer.optimize(
+                asset=asset,
+                solar_kw=scenario.solar_kw,
+                load_kw=scenario.load_kw,
+                price_gbp_kwh=scenario.price_gbp_kwh,
+                grid_export_limit_kw=grid_limit
+            )
 
-        # Check grid violations
-        grid_checker = GridConstraintChecker(grid_export_limit_kw=grid_limit)
-        grid_analysis = grid_checker.check_violations(result.grid_export_kw)
+            # Check grid violations
+            grid_checker = GridConstraintChecker(grid_export_limit_kw=grid_limit)
+            grid_analysis = grid_checker.check_violations(result.grid_export_kw)
 
-        # Calculate baseline (no battery)
-        baseline = calculate_baseline_cost(
-            solar_kw=scenario.solar_kw,
-            load_kw=scenario.load_kw,
-            price_gbp_kwh=scenario.price_gbp_kwh
-        )
+            # Calculate baseline (no battery)
+            baseline = calculate_baseline_cost(
+                solar_kw=scenario.solar_kw,
+                load_kw=scenario.load_kw,
+                price_gbp_kwh=scenario.price_gbp_kwh
+            )
 
-        # Store in session state
-        st.session_state.result = result
-        st.session_state.scenario = scenario
-        st.session_state.grid_analysis = grid_analysis
-        st.session_state.baseline = baseline
-        st.session_state.asset = asset
+            # Store in session state
+            st.session_state.result = result
+            st.session_state.scenario = scenario
+            st.session_state.grid_analysis = grid_analysis
+            st.session_state.baseline = baseline
+            st.session_state.asset = asset
+        except Exception as exc:  # noqa: BLE001 - streamlit-friendly user feedback
+            st.error(f"Optimization failed: {exc}")
+            st.stop()
 
 # ============================================================================
 # METRICS DASHBOARD (Bloomberg-style)
@@ -228,10 +233,12 @@ if 'result' in st.session_state:
         annual_profit = result.net_profit_gbp * 365
         battery_cost = 7000  # Typical Tesla Powerwall
         payback = battery_cost / annual_profit if annual_profit > 0 else 999
+        payback_display = f"{payback:.1f} years" if annual_profit > 0 else "N/A"
+        roi_delta = f"ROI: {(annual_profit/battery_cost*100):.1f}%" if annual_profit > 0 else "No payback"
         st.metric(
             label="PAYBACK PERIOD",
-            value=f"{payback:.1f} years",
-            delta=f"ROI: {(annual_profit/battery_cost*100):.1f}%" if payback < 50 else "N/A"
+            value=payback_display,
+            delta=roi_delta
         )
 
     with col3:
@@ -289,6 +296,11 @@ if 'result' in st.session_state:
     )
 
     st.plotly_chart(grid_chart, use_container_width=True)
+
+    if grid_analysis.get('violations'):
+        st.markdown("#### Grid Violations")
+        violation_rows = [asdict(v) for v in grid_analysis['violations']]
+        st.dataframe(violation_rows, use_container_width=True, hide_index=True)
 
     # ========================================================================
     # DETAILED ANALYSIS
