@@ -1,4 +1,4 @@
-# ⚡ VPP Trading Terminal
+# VPP Trading Terminal
 
 > **Professional Virtual Power Plant simulation platform for grid-connected battery arbitrage**
 
@@ -8,7 +8,7 @@
 
 ---
 
-## 🎯 What This Is
+## What This Is
 
 A **Bloomberg-terminal style** energy trading dashboard that optimizes residential battery systems for maximum profit while respecting physical grid constraints.
 
@@ -18,7 +18,7 @@ A **Bloomberg-terminal style** energy trading dashboard that optimizes residenti
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -38,7 +38,7 @@ streamlit run app.py
 
 ---
 
-## 💡 Features
+## Features
 
 ### 1. **Market Engine** (Financial Optimization)
 - Linear Programming solver for battery arbitrage
@@ -60,7 +60,7 @@ streamlit run app.py
 
 ---
 
-## 📊 Screenshots
+## Screenshots
 
 ### Main Dashboard
 ![Dashboard](docs/images/dashboard.png)
@@ -76,7 +76,7 @@ streamlit run app.py
 
 ---
 
-## 🧠 How It Works
+## How It Works
 
 ### The Optimization Problem
 
@@ -98,13 +98,13 @@ Subject to:
 Without optimization, a battery might discharge at high prices while solar is generating, exceeding the grid export limit:
 
 ```
-❌ Naive Strategy:
+Naive Strategy:
 Solar: 3 kW
 Battery discharge: 5 kW
 → Net export: 8 kW (exceeds 4 kW limit!)
 → Transformer overload, voltage rise > 10%, £20k DNO fine
 
-✅ LP-Constrained:
+LP-Constrained:
 Optimizer automatically curtails discharge to 1 kW
 → Net export: 4 kW (exactly at limit)
 → Revenue loss: £1.20 | Penalty avoided: £20k+
@@ -114,7 +114,7 @@ The grid constraint is **mathematically guaranteed** by the LP solver.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 SolarPal/
@@ -139,7 +139,7 @@ SolarPal/
 
 ---
 
-## 🔧 Configuration
+## Configuration
 
 ### Scenario Parameters (Sidebar)
 
@@ -156,7 +156,7 @@ SolarPal/
 
 ---
 
-## 📈 Example Results
+## Example Results
 
 ### Typical Daily Performance:
 ```
@@ -164,7 +164,7 @@ Net Profit:              £1.91
 Annual Projection:       £697
 Payback Period:          10.0 years
 Sharpe Ratio:            2.34
-Grid Compliance:         ✅ 100%
+Grid Compliance:         100%
 Max Grid Export:         4.00 kW (at limit)
 Violations:              0
 ```
@@ -179,7 +179,7 @@ Battery Benefit:         +£2.20/day
 
 ---
 
-## 💻 Technical Stack
+## Technical Stack
 
 - **Backend:** Python 3.9+, SciPy, NumPy
 - **Optimization:** Linear Programming (HiGHS solver)
@@ -189,7 +189,7 @@ Battery Benefit:         +£2.20/day
 
 ---
 
-## 🎓 Use Cases
+## Use Cases
 
 ### For Students/Portfolio:
 - Demonstrates professional-grade optimization
@@ -208,7 +208,7 @@ Battery Benefit:         +£2.20/day
 
 ---
 
-## 🔬 Advanced Features
+## Advanced Features
 
 ### Coming Soon:
 1. **Stochastic Programming:** Handle forecast uncertainty
@@ -226,7 +226,7 @@ The modular architecture makes it easy to add:
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **Integration Guide:** [VPP_INTEGRATION_GUIDE.md](VPP_INTEGRATION_GUIDE.md)
 - **Interview Prep:** [INTERVIEW_GUIDE.md](INTERVIEW_GUIDE.md)
@@ -234,7 +234,7 @@ The modular architecture makes it easy to add:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 This is a portfolio project, but suggestions welcome!
 
@@ -246,23 +246,23 @@ This is a portfolio project, but suggestions welcome!
 
 ---
 
-## 📝 License
+## License
 
 MIT License - Free to use for educational and portfolio purposes.
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **SolarPal Team**
 
 Built to demonstrate quantitative optimization and power systems engineering for energy sector recruitment.
 
-**Contact:** [Your Email / LinkedIn]
+**Contact:** [yuilonlam0607@gmail.com   /  https://www.linkedin.com/in/frankie-lam-400b4231a/]
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Inspiration:** National Grid ESO's VPP strategy
 - **Physics:** UK Power Networks G99 technical guidance
@@ -271,7 +271,7 @@ Built to demonstrate quantitative optimization and power systems engineering for
 
 ---
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 **Optimization Speed:**
 - Problem size: 289 variables, ~400 constraints
@@ -285,11 +285,11 @@ Built to demonstrate quantitative optimization and power systems engineering for
 
 ---
 
-**⚡ Built with Python, SciPy, Streamlit, and a passion for clean energy systems ⚡**
+**Built with Python, SciPy, Streamlit, and a passion for clean energy systems ⚡**
 
 ---
 
-## 🚨 Important Notes
+## Important Notes
 
 ### Grid Constraints:
 The 4 kW export limit represents typical UK DNO G99 connection limits. Exceeding this causes:
@@ -317,4 +317,3 @@ This project demonstrates:
 
 ---
 
-**Ready to impress energy quants and grid engineers!** 🎯
