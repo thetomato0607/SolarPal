@@ -1,6 +1,6 @@
-# 🎯 VPP Trading Terminal - Deployment Summary
+# VPP Trading Terminal - Deployment Summary
 
-## ✅ What Was Built
+## What Was Built
 
 You now have a **professional-grade Virtual Power Plant trading terminal** with:
 
@@ -33,7 +33,7 @@ You now have a **professional-grade Virtual Power Plant trading terminal** with:
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
 ### Start the Trading Terminal
 
@@ -55,9 +55,9 @@ uvicorn main:app --reload
 
 ---
 
-## 📋 File Inventory
+## File Inventory
 
-### ✅ NEW FILES CREATED
+### NEW FILES CREATED
 
 ```
 SolarPal/
@@ -78,7 +78,7 @@ SolarPal/
 └── DEPLOYMENT_SUMMARY.md               # This file
 ```
 
-### 🔄 KEPT FROM ORIGINAL
+### KEPT FROM ORIGINAL
 
 ```
 backend/
@@ -90,7 +90,7 @@ backend/
 └── models.py                           # Pydantic models (kept)
 ```
 
-### ❌ TO BE DELETED (See CLEANUP_GUIDE.md)
+### TO BE DELETED (See CLEANUP_GUIDE.md)
 
 ```
 solarpal-frontend/                      # React app (DELETE)
@@ -104,7 +104,7 @@ backend/utils/                          # Old dummy data (DELETE)
 
 ---
 
-## 🎨 Visual Style
+## Visual Style
 
 ### Color Scheme (Dark Mode)
 ```python
@@ -127,7 +127,7 @@ Theme:      Bloomberg terminal aesthetic
 
 ---
 
-## 🧪 Testing Checklist
+## Testing Checklist
 
 ### Module Tests
 - [x] `BatteryOptimizer` initializes
@@ -154,7 +154,7 @@ streamlit run app.py  # Manual UI test
 
 ---
 
-## 📊 Expected Performance
+## Expected Performance
 
 ### Optimization Metrics
 
@@ -180,7 +180,7 @@ Grid Violations:     0 (guaranteed)
 
 ---
 
-## 🎓 For Your Portfolio
+## For Your Portfolio
 
 ### CV Bullet Point
 
@@ -215,7 +215,7 @@ guarantees DNO compliance (no heuristics).
 ### LinkedIn Post
 
 ```
-🚀 Just built a Virtual Power Plant trading terminal!
+Just built a Virtual Power Plant trading terminal!
 
 Uses Linear Programming to optimize battery arbitrage while respecting
 grid physics constraints. Bloomberg-style dashboard shows:
@@ -236,7 +236,7 @@ Tech: Python | SciPy | Streamlit | Plotly
 
 ---
 
-## 🔧 Next Steps (Optional Enhancements)
+## Next Steps (Optional Enhancements)
 
 ### 1. Stochastic Programming
 ```python
@@ -274,7 +274,7 @@ objective = revenue - λ * Σ(discharge_depth²)
 
 ---
 
-## 💡 Interview Talking Points
+## Interview Talking Points
 
 ### The Elevator Pitch (30s)
 
@@ -313,7 +313,7 @@ objective = revenue - λ * Σ(discharge_depth²)
 
 ---
 
-## 🎯 Recruiter Checklist
+## Recruiter Checklist
 
 When showing this project, highlight:
 
@@ -326,7 +326,7 @@ When showing this project, highlight:
 
 ---
 
-## 📞 Support & Resources
+## Support & Resources
 
 ### Documentation
 - **Technical:** `VPP_INTEGRATION_GUIDE.md`
@@ -345,9 +345,9 @@ When showing this project, highlight:
 
 ---
 
-## ✅ Final Status
+## Final Status
 
-**Project Status:** ✅ COMPLETE & PORTFOLIO-READY
+**Project Status:** COMPLETE & PORTFOLIO-READY
 
 **What You Have:**
 - Bloomberg-style trading terminal (dark mode)
@@ -363,11 +363,11 @@ When showing this project, highlight:
 - React boilerplate
 
 **Result:**
-🎯 A portfolio piece that impresses **energy quants** and **grid engineers**.
+A portfolio piece that impresses **energy quants** and **grid engineers**.
 
 ---
 
-**🚀 Ready to deploy! Show it to recruiters!** 🎯
+**Ready to deploy! Show it to recruiters!**
 
 ---
 

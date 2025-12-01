@@ -25,15 +25,15 @@ SolarPal/
 
 FILES TO DELETE:
 ├── backend/routes/
-│   ├── tips.py                     # ❌ DELETE (homeowner tips)
-│   ├── onboarding.py               # ❌ DELETE (educational flow)
-│   └── summary.py                  # ❌ DELETE (simple summary)
+│   ├── tips.py                     # DELETE (homeowner tips)
+│   ├── onboarding.py               # DELETE (educational flow)
+│   └── summary.py                  # DELETE (simple summary)
 ├── backend/db/
-│   └── fake_db.py                  # ❌ DELETE (no database needed)
+│   └── fake_db.py                  # DELETE (no database needed)
 ├── backend/utils/
-│   └── dummy_data.py               # ❌ DELETE (replaced by modules)
-├── solarpal-frontend/              # ❌ DELETE ENTIRE FOLDER (React replaced by Streamlit)
-└── Any .html, .css, .json files    # ❌ DELETE (no web templates needed)
+│   └── dummy_data.py               # DELETE (replaced by modules)
+├── solarpal-frontend/              # DELETE ENTIRE FOLDER (React replaced by Streamlit)
+└── Any .html, .css, .json files    # DELETE (no web templates needed)
 ```
 
 ---

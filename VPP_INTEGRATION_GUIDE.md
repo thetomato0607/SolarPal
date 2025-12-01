@@ -206,7 +206,7 @@ Without control, a solar+battery system could export too much power:
 Solar: 3 kW
 Load: 1 kW
 Battery discharge: 5 kW
-→ Net export: 7 kW ❌ (exceeds 4 kW DNO limit)
+→ Net export: 7 kW (exceeds 4 kW DNO limit)
 ```
 
 This causes:
@@ -266,12 +266,12 @@ Constrained strategy: "Wait... if I discharge 5 kW at 18:00 when solar=0.5 kW,
 
 ### Technical Terms to Use
 
-- ✅ **Linear Programming with inequality constraints**
-- ✅ **Point of Common Coupling (PCC) limits**
-- ✅ **UK G99 voltage rise regulations (±10%)**
-- ✅ **Active Network Management (ANM)**
-- ✅ **Distribution Network Operator (DNO) compliance**
-- ✅ **Convex optimization → global optimum guaranteed**
+- **Linear Programming with inequality constraints**
+- **Point of Common Coupling (PCC) limits**
+- **UK G99 voltage rise regulations (±10%)**
+- **Active Network Management (ANM)**
+- **Distribution Network Operator (DNO) compliance**
+- **Convex optimization → global optimum guaranteed**
 
 ---
 
@@ -417,11 +417,11 @@ open http://localhost:8000/docs
 
 ### Production Checklist
 
-1. ✅ Install dependencies: `pip install scipy fastapi uvicorn`
-2. ✅ Set CORS origins in [main.py](backend/main.py)
-3. ✅ Configure grid limits per region (UK DNO-specific)
-4. ✅ Add authentication for sensitive endpoints
-5. ✅ Deploy to cloud (AWS Lambda, Railway, etc.)
+1. Install dependencies: `pip install scipy fastapi uvicorn`
+2. Set CORS origins in [main.py](backend/main.py)
+3. Configure grid limits per region (UK DNO-specific)
+4. Add authentication for sensitive endpoints
+5. Deploy to cloud (AWS Lambda, Railway, etc.)
 
 ---
 
@@ -468,12 +468,12 @@ open http://localhost:8000/docs
 
 Your SolarPal project now includes:
 
-✅ **Professional-grade optimization** using Linear Programming
-✅ **Physics-based constraints** (grid limits, battery dynamics)
-✅ **Real-world compliance** (UK G99 regulations)
-✅ **Financial analysis** (ROI, payback, arbitrage value)
-✅ **RESTful API** (FastAPI with auto-generated docs)
-✅ **Portfolio-ready** (interview talking points included)
+- **Professional-grade optimization** using Linear Programming
+- **Physics-based constraints** (grid limits, battery dynamics)
+- **Real-world compliance** (UK G99 regulations)
+- **Financial analysis** (ROI, payback, arbitrage value)
+- **RESTful API** (FastAPI with auto-generated docs)
+- **Portfolio-ready** (interview talking points included)
 
 **Key Innovation:** The grid constraint `P_export <= 4 kW` is **automatically enforced** by the LP solver, guaranteeing DNO compliance without manual checks.
 
@@ -485,4 +485,4 @@ Your SolarPal project now includes:
 **Author:** SolarPal Team
 **Version:** 2.0.0
 
-🚀 **Your student project is now a professional VPP simulator!**
+**Your student project is now a professional VPP simulator!**

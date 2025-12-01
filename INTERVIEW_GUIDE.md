@@ -49,8 +49,8 @@ The LP solver (`scipy.optimize.linprog` using HiGHS algorithm) finds the globall
 IF price > £0.10: discharge battery
 ELIF price < £0.05: charge battery
 ```
-❌ Problem: Doesn't account for future state
-❌ No constraint guarantee—could violate grid limit
+Problem: Doesn't account for future state
+No constraint guarantee—could violate grid limit
 
 **2. Reinforcement Learning (Modern but Overkill):**
 - Requires thousands of training episodes
@@ -58,11 +58,11 @@ ELIF price < £0.05: charge battery
 - Black box (hard to explain to regulators)
 
 **3. Linear Programming (My Choice):**
-✅ **Global optimum guaranteed** (convex objective + linear constraints)
-✅ **Constraint proof:** LP solver mathematically ensures grid limit satisfaction
-✅ **Fast:** <0.5s solve time for 96 timesteps (289 variables, 400 constraints)
-✅ **Explainable:** Can show DNO exactly why decisions were made
-✅ **Scalable:** Extends to fleet-level VPP (1000+ homes)
+- **Global optimum guaranteed** (convex objective + linear constraints)
+- **Constraint proof:** LP solver mathematically ensures grid limit satisfaction
+- **Fast:** <0.5s solve time for 96 timesteps (289 variables, 400 constraints)
+- **Explainable:** Can show DNO exactly why decisions were made
+- **Scalable:** Extends to fleet-level VPP (1000+ homes)
 
 In production, I'd combine this with **Model Predictive Control (MPC)** to handle forecast uncertainty—re-optimize every hour with rolling horizon."
 
@@ -81,25 +81,25 @@ Scenario: 18:00 evening peak
 
 Unconstrained optimization:
 "Discharge 5 kW to maximize revenue!"
-→ Net export = 0.5 - 1.2 + 5 = 4.3 kW ❌ Exceeds limit
+→ Net export = 0.5 - 1.2 + 5 = 4.3 kW (Exceeds limit)
 
 LP constraint enforcement:
 Grid_Export = Solar - Load + Discharge - Charge
 4.3 = 0.5 - 1.2 + Discharge
 Discharge ≤ 4.0 - (0.5 - 1.2) = 4.7 kW  ← Solver applies this
 
-Result: Discharge = 4.7 kW, Net_Export = 4.0 kW ✅
+Result: Discharge = 4.7 kW, Net_Export = 4.0 kW (Within limit)
 ```
 
 **The Physics Impact:**
 ```
 Voltage_Rise = (P_export × R_line) / V_nominal²
              = (4.0 kW × 0.075 Ω) / 230 V
-             = 1.3 V (0.56% rise) ✅ Within G99 ±10% limit
+             = 1.3 V (0.56% rise) - Within G99 ±10% limit
 
 If unconstrained (4.3 kW):
 Voltage_Rise = 1.4 V (0.61%) ← Still safe, but...
-At substation level with 500 homes: 500 × 0.05% = 25% rise ❌ OVERLOAD
+At substation level with 500 homes: 500 × 0.05% = 25% rise - OVERLOAD
 ```
 
 "That's why DNO imposes per-home limits—to prevent **aggregate** transformer damage."
@@ -163,7 +163,7 @@ Solve time: ~30s (using commercial solver like Gurobi)
 **Hierarchical Approach (Better):**
 1. **Aggregator** allocates capacity to homes: `quota[i] = f(battery_size, historical_usage)`
 2. **Each home** optimizes independently with quota constraint: `P_grid <= quota[i]`
-3. **Total fleet export** = Σ(home exports) ≤ Substation capacity ✅
+3. **Total fleet export** = Σ(home exports) ≤ Substation capacity
 
 This is how **National Grid ESO's Demand Flexibility Service (DFS)** works.
 
@@ -179,25 +179,25 @@ This is how **National Grid ESO's Demand Flexibility Service (DFS)** works.
 ## Key Technical Terms (Drop These in Interview)
 
 ### Power Systems
-- ✅ **Point of Common Coupling (PCC):** Grid connection point
-- ✅ **Distribution Network Operator (DNO):** UK utility managing LV network
-- ✅ **G99 Regulations:** UK grid connection standard (±10% voltage limits)
-- ✅ **Active Network Management (ANM):** Dynamic constraint enforcement
-- ✅ **Low Voltage (LV) Network:** 230V residential distribution
+- **Point of Common Coupling (PCC):** Grid connection point
+- **Distribution Network Operator (DNO):** UK utility managing LV network
+- **G99 Regulations:** UK grid connection standard (±10% voltage limits)
+- **Active Network Management (ANM):** Dynamic constraint enforcement
+- **Low Voltage (LV) Network:** 230V residential distribution
 
 ### Optimization
-- ✅ **Linear Programming:** Optimization with linear objective + constraints
-- ✅ **Convex Optimization:** Guarantees global optimum (no local minima)
-- ✅ **HiGHS Solver:** Modern sparse LP algorithm (interior-point method)
-- ✅ **Shadow Price:** Marginal value of relaxing a constraint
-- ✅ **Dual Variables:** Economic interpretation of constraint tightness
+- **Linear Programming:** Optimization with linear objective + constraints
+- **Convex Optimization:** Guarantees global optimum (no local minima)
+- **HiGHS Solver:** Modern sparse LP algorithm (interior-point method)
+- **Shadow Price:** Marginal value of relaxing a constraint
+- **Dual Variables:** Economic interpretation of constraint tightness
 
 ### Energy Economics
-- ✅ **Price Arbitrage:** Buy low, sell high strategy
-- ✅ **Duck Curve:** Price suppression during solar peak
-- ✅ **Scarcity Pricing:** High prices during evening demand peak
-- ✅ **Imbalance Market:** Real-time grid balancing mechanism
-- ✅ **Capacity Market:** Long-term contracts for reserve power
+- **Price Arbitrage:** Buy low, sell high strategy
+- **Duck Curve:** Price suppression during solar peak
+- **Scarcity Pricing:** High prices during evening demand peak
+- **Imbalance Market:** Real-time grid balancing mechanism
+- **Capacity Market:** Long-term contracts for reserve power
 
 ---
 
@@ -219,7 +219,7 @@ for t in range(N):  # For each 15-min interval
     A_ub.append(constraint)
 
 # LP solver guarantees: discharge - charge <= grid_limit - (solar - load)
-# Equivalently: solar - load + discharge - charge <= grid_limit ✅
+# Equivalently: solar - load + discharge - charge <= grid_limit
 ```
 
 **Interviewer:** "Walk me through this"
@@ -286,7 +286,7 @@ In practice, **Model Predictive Control** with 1-hour re-optimization handles 99
 
 ## Red Flags to Avoid
 
-### ❌ DON'T SAY:
+### DON'T SAY:
 - "I just used an `if` statement to check the grid limit"
   → Shows lack of optimization understanding
 - "The battery always discharges at high prices"
@@ -294,7 +294,7 @@ In practice, **Model Predictive Control** with 1-hour re-optimization handles 99
 - "I didn't consider grid limits because they're not important"
   → Regulatory compliance is critical in energy!
 
-### ✅ DO SAY:
+### DO SAY:
 - "I formulated it as a constrained optimization problem"
 - "The LP solver provides a mathematical guarantee"
 - "Grid compliance was a first-class constraint, not an afterthought"
@@ -327,7 +327,7 @@ BUT add these:
 TOTAL:                                £1,347/year
 
 Revised Payback:
-£7,000 / £1,347 = 5.2 years ✅ (More realistic)
+£7,000 / £1,347 = 5.2 years (More realistic)
 
 After 10 years:
 Total profit: £13,470
@@ -381,4 +381,4 @@ Net gain: £6,470 (93% ROI)
 
 **Remember:** You didn't just build a calculator—you built a **production-ready optimization platform** that solves a real economic problem (battery arbitrage) while respecting real physical constraints (grid limits). That's **senior-level engineering**.
 
-🚀 **Go crush that interview!**
+**Go crush that interview!**

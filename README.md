@@ -285,7 +285,7 @@ Built to demonstrate quantitative optimization and power systems engineering for
 
 ---
 
-**Built with Python, SciPy, Streamlit, and a passion for clean energy systems ⚡**
+**Built with Python, SciPy, Streamlit, and a passion for clean energy systems**
 
 ---
 
@@ -307,11 +307,11 @@ We use Linear Programming (not heuristics) because:
 
 ### For Recruiters:
 This project demonstrates:
-✅ Quantitative optimization (LP formulation)
-✅ Domain expertise (UK energy markets, G99 regs)
-✅ System design (modular architecture)
-✅ Production thinking (fast solvers, API-ready)
-✅ Communication (professional documentation)
+- Quantitative optimization (LP formulation)
+- Domain expertise (UK energy markets, G99 regs)
+- System design (modular architecture)
+- Production thinking (fast solvers, API-ready)
+- Communication (professional documentation)
 
 **Key Talking Point:** *"The grid constraint is enforced as an LP inequality, guaranteeing compliance without manual checks—this is production-grade DNO integration."*
 

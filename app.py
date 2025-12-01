@@ -17,7 +17,7 @@ from modules.visualization import create_price_chart, create_grid_flow_chart
 # Page configuration
 st.set_page_config(
     page_title="VPP Trading Terminal",
-    page_icon="⚡",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -58,10 +58,10 @@ st.markdown("""
 # SIDEBAR: SCENARIO CONTROLS
 # ============================================================================
 
-st.sidebar.markdown("## ⚙️ SCENARIO CONFIGURATION")
+st.sidebar.markdown("## SCENARIO CONFIGURATION")
 st.sidebar.markdown("---")
 
-st.sidebar.markdown("### 🔋 ASSET PARAMETERS")
+st.sidebar.markdown("### ASSET PARAMETERS")
 battery_capacity = st.sidebar.slider(
     "Battery Capacity (kWh)",
     min_value=5.0,
@@ -98,7 +98,7 @@ initial_soc = st.sidebar.slider(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 📊 MARKET PARAMETERS")
+st.sidebar.markdown("### MARKET PARAMETERS")
 
 system_size = st.sidebar.slider(
     "Solar System Size (kWp)",
@@ -135,7 +135,7 @@ daily_load = st.sidebar.slider(
 )
 
 st.sidebar.markdown("---")
-run_simulation = st.sidebar.button("🚀 RUN OPTIMIZATION", type="primary", use_container_width=True)
+run_simulation = st.sidebar.button("RUN OPTIMIZATION", type="primary", use_container_width=True)
 
 # ============================================================================
 # MAIN DASHBOARD
@@ -144,7 +144,7 @@ run_simulation = st.sidebar.button("🚀 RUN OPTIMIZATION", type="primary", use_
 # Header
 st.markdown("""
 <div style='text-align: center; padding: 20px 0;'>
-    <h1>⚡ VPP TRADING TERMINAL</h1>
+    <h1>VPP TRADING TERMINAL</h1>
     <p style='color: #888; font-size: 14px; letter-spacing: 1px;'>
         VIRTUAL POWER PLANT | GRID-CONSTRAINED BATTERY ARBITRAGE
     </p>
@@ -156,7 +156,7 @@ st.markdown("""
 # ============================================================================
 
 if run_simulation or 'result' not in st.session_state:
-    with st.spinner("🔄 Running optimization engine..."):
+    with st.spinner("Running optimization engine..."):
         # Generate market scenario
         market_gen = MarketDataGenerator()
         scenario = market_gen.generate_scenario(
@@ -212,7 +212,7 @@ if 'result' in st.session_state:
     baseline = st.session_state.baseline
     asset = st.session_state.asset
 
-    st.markdown("### 📈 PERFORMANCE METRICS")
+    st.markdown("### PERFORMANCE METRICS")
 
     col1, col2, col3, col4, col5 = st.columns(5)
 
@@ -242,7 +242,7 @@ if 'result' in st.session_state:
         )
 
     with col4:
-        violation_status = "✅ COMPLIANT" if grid_analysis['violation_count'] == 0 else f"❌ {grid_analysis['violation_count']} VIOLATIONS"
+        violation_status = "COMPLIANT" if grid_analysis['violation_count'] == 0 else f"{grid_analysis['violation_count']} VIOLATIONS"
         st.metric(
             label="GRID COMPLIANCE",
             value=violation_status,
@@ -262,7 +262,7 @@ if 'result' in st.session_state:
     # CHART 1: FINANCIAL OPTIMIZATION
     # ========================================================================
 
-    st.markdown("### 💰 MARKET ENGINE: Price Arbitrage")
+    st.markdown("### MARKET ENGINE: Price Arbitrage")
 
     hours = [ts.hour + ts.minute/60 for ts in scenario.timestamps]
 
@@ -280,7 +280,7 @@ if 'result' in st.session_state:
     # CHART 2: GRID CONSTRAINT ENFORCEMENT
     # ========================================================================
 
-    st.markdown("### 🔌 GRID ENGINE: Physical Constraints")
+    st.markdown("### GRID ENGINE: Physical Constraints")
 
     grid_chart = create_grid_flow_chart(
         hours=hours,
@@ -295,12 +295,12 @@ if 'result' in st.session_state:
     # ========================================================================
 
     st.markdown("---")
-    st.markdown("### 📊 DETAILED BREAKDOWN")
+    st.markdown("### DETAILED BREAKDOWN")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("#### 💵 Financial Summary")
+        st.markdown("#### Financial Summary")
         st.markdown(f"""
         | Metric | Value |
         |--------|-------|
@@ -313,14 +313,14 @@ if 'result' in st.session_state:
         """)
 
     with col2:
-        st.markdown("#### ⚡ Grid Impact")
+        st.markdown("#### Grid Impact")
         st.markdown(f"""
         | Metric | Value |
         |--------|-------|
         | **Max Voltage Rise** | {grid_analysis['max_voltage_rise_pct']:.2f}% |
         | **Peak Grid Stress** | {grid_analysis['peak_grid_stress']*100:.0f}% |
         | **Times at Limit** | {grid_analysis['times_at_limit']} intervals |
-        | **G99 Compliant** | {'✅ YES' if grid_analysis['g99_compliant'] else '❌ NO'} |
+        | **G99 Compliant** | {'YES' if grid_analysis['g99_compliant'] else 'NO'} |
         | **Violations** | {grid_analysis['violation_count']} |
         """)
 
@@ -328,7 +328,7 @@ if 'result' in st.session_state:
     # SOLVER INFO
     # ========================================================================
 
-    with st.expander("🔧 Optimization Details"):
+    with st.expander("Optimization Details"):
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Solver Status", result.solver_status)

@@ -1,6 +1,6 @@
-# ⚡ VPP Trading Terminal - Quick Start
+# VPP Trading Terminal - Quick Start
 
-## 🚀 Launch in 3 Commands
+## Launch in 3 Commands
 
 ```bash
 cd "c:\Users\Frankie Lam\OneDrive\Documents\SolarPal"
@@ -12,7 +12,7 @@ streamlit run app.py
 
 ---
 
-## 🎮 How to Use
+## How to Use
 
 ### Step 1: Configure Your Scenario (Sidebar)
 
@@ -28,7 +28,7 @@ streamlit run app.py
 
 ### Step 2: Run Optimization
 
-Click **"🚀 RUN OPTIMIZATION"** button
+Click **"RUN OPTIMIZATION"** button
 
 **What happens:**
 1. Generates 24h market data (96 intervals)
@@ -42,7 +42,7 @@ Click **"🚀 RUN OPTIMIZATION"** button
 - **Net Profit:** Daily revenue (£1-3)
 - **Payback:** Years to ROI (7-12 years)
 - **Sharpe Ratio:** Risk-adjusted return (>2 = good)
-- **Grid Compliance:** ✅ if no violations
+- **Grid Compliance:** PASS if no violations
 
 **Charts:**
 1. **Price Arbitrage:** When to charge (green) vs. discharge (red)
@@ -50,7 +50,7 @@ Click **"🚀 RUN OPTIMIZATION"** button
 
 ---
 
-## 🎯 What to Show Recruiters
+## What to Show Recruiters
 
 ### Demo Flow (3 minutes)
 
@@ -89,7 +89,7 @@ Click **"🚀 RUN OPTIMIZATION"** button
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### "Module not found"
 ```bash
@@ -112,7 +112,7 @@ streamlit run app.py --server.port 8502
 
 ---
 
-## 📊 Example Scenarios to Try
+## Example Scenarios to Try
 
 ### 1. High Volatility Market
 ```
@@ -147,7 +147,7 @@ Result: Max export 5-6 kW (inverter limited), profit +5%
 
 ---
 
-## 🎓 For Presentations
+## For Presentations
 
 ### Slide 1: The Problem
 ```
@@ -173,25 +173,25 @@ Result: Max export 5-6 kW (inverter limited), profit +5%
 
 ---
 
-## 🚨 Important Notes
+## Important Notes
 
 ### What the App Does:
-✅ Optimizes battery for profit
-✅ Enforces grid constraints (G99)
-✅ Calculates ROI and Sharpe ratio
-✅ Visualizes strategy
+- Optimizes battery for profit
+- Enforces grid constraints (G99)
+- Calculates ROI and Sharpe ratio
+- Visualizes strategy
 
 ### What the App Doesn't Do:
-❌ Control real hardware (simulation only)
-❌ Use live data (synthetic profiles)
-❌ Account for degradation (simple model)
-❌ Optimize multiple days (24h horizon)
+- Control real hardware (simulation only)
+- Use live data (synthetic profiles)
+- Account for degradation (simple model)
+- Optimize multiple days (24h horizon)
 
 **For Production:** Add real APIs (Octopus, Tesla), rolling horizon MPC, degradation costs.
 
 ---
 
-## 📁 File Quick Reference
+## File Quick Reference
 
 ```
 Main App:           app.py
@@ -207,7 +207,7 @@ Cleanup:            CLEANUP_GUIDE.md
 
 ---
 
-## ⚡ One-Liner Explanations
+## One-Liner Explanations
 
 **For Quants:**
 > "LP-based battery arbitrage with Sharpe ratio optimization"
@@ -223,6 +223,6 @@ Cleanup:            CLEANUP_GUIDE.md
 
 ---
 
-**🎯 That's it! You're ready to impress recruiters!**
+**That's it! You're ready to impress recruiters!**
 
 *Last updated: 2025-12-01*
