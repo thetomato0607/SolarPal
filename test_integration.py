@@ -1,116 +1,217 @@
-#!/usr/bin/env python3
 """
-Integration Test - SolarPal Live Data
-======================================
-Test that live data flows correctly through the entire system.
+VPP Integration Test Suite
+===========================
+Verifies that the VPP engine is properly integrated and working.
 """
 
-from modules.market_data import MarketDataGenerator
-from modules.live_data import OctopusEnergyAPI
-from datetime import datetime
+import sys
+import os
 
-def test_live_data_integration():
-    """Test complete live data flow."""
+def test_vpp_engine():
+    """Test VPP optimizer core functionality (using consolidated modules)."""
     print("\n" + "="*70)
-    print("SOLARPAL LIVE DATA INTEGRATION TEST")
+    print("TEST 1: VPP Engine Import & Optimization")
     print("="*70)
 
-    # Test 1: Direct API fetch
-    print("\n[TEST 1] Testing direct API fetch...")
     try:
-        prices = OctopusEnergyAPI.fetch_agile_prices(region='A')
-        if prices and len(prices) == 96:
-            print(f"✅ API fetch successful: {len(prices)} intervals")
-            print(f"   Price range: £{min(prices):.4f} - £{max(prices):.4f}/kWh")
-        else:
-            print(f"❌ API fetch failed or incomplete data")
-            return False
-    except Exception as e:
-        print(f"❌ API fetch error: {e}")
-        return False
+        # Import from consolidated modules (single source of truth)
+        # Add project root to path
+        sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+        
+        from modules.optimization import BatteryOptimizer, BatteryAsset
+        from modules.market_data import MarketDataGenerator
 
-    # Test 2: Market data generator with live prices
-    print("\n[TEST 2] Testing MarketDataGenerator with live prices...")
-    try:
-        market_gen = MarketDataGenerator(
-            use_live_prices=True,
-            octopus_region='A'
-        )
+        print("[PASS] Modules imported (DRY-compliant structure)")
 
+        # Generate market scenario
+        market_gen = MarketDataGenerator()
         scenario = market_gen.generate_scenario(
-            system_size_kwp=3.5,
-            daily_load_kwh=12.0,
-            volatility_multiplier=1.5,
+            system_size_kwp=2.5,
+            daily_load_kwh=10.0,
+            volatility_multiplier=1.0,
             cloud_cover_factor=0.3,
-            start_date=datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            intervals=96
+        )
+        print(f"[PASS] Generated {len(scenario.solar_kw)} intervals of test data")
+
+        # Create battery asset
+        asset = BatteryAsset(
+            capacity_kwh=13.5,
+            power_kw=5.0,
+            efficiency=0.90,
+            initial_soc_pct=50.0
+        )
+        print("[PASS] Battery asset created")
+
+        # Create optimizer and run
+        optimizer = BatteryOptimizer(timestep_minutes=15)
+        result = optimizer.optimize(
+            asset=asset,
+            solar_kw=scenario.solar_kw,
+            load_kw=scenario.load_kw,
+            price_gbp_kwh=scenario.price_gbp_kwh,
+            grid_export_limit_kw=4.0
         )
 
-        if scenario and len(scenario.price_gbp_kwh) == 96:
-            print(f"✅ Scenario generation successful")
-            print(f"   Data source: {scenario.price_data_source}")
-            print(f"   Region: {scenario.price_region}")
-            print(f"   Price range: £{min(scenario.price_gbp_kwh):.4f} - £{max(scenario.price_gbp_kwh):.4f}/kWh")
+        print(f"[PASS] Optimization completed successfully")
+        print(f"  Revenue: {result.revenue_gbp:.2f} GBP")
+        print(f"  Cost: {result.cost_gbp:.2f} GBP")
+        print(f"  Net Profit: {result.net_profit_gbp:.2f} GBP")
+        print(f"  Sharpe Ratio: {result.sharpe_ratio:.2f}")
 
-            if scenario.price_data_source == "octopus_agile":
-                print(f"✅ Live data successfully integrated!")
-                return True
-            else:
-                print(f"⚠️  Fell back to synthetic data")
-                return False
-        else:
-            print(f"❌ Scenario generation failed")
-            return False
+        return True
 
     except Exception as e:
-        print(f"❌ Scenario generation error: {e}")
+        print(f"[FAIL] Error: {e}")
         import traceback
         traceback.print_exc()
         return False
 
-    # Test 3: Synthetic fallback
-    print("\n[TEST 3] Testing synthetic fallback...")
+
+def test_api_routes():
+    """Test that API routes are properly configured."""
+    print("\n" + "="*70)
+    print("TEST 2: API Route Configuration")
+    print("="*70)
+
     try:
-        market_gen = MarketDataGenerator(
-            use_live_prices=False,  # Force synthetic
-            octopus_region='A'
-        )
+        # Ensure backend is in path
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from routes import vpp
+        print("[PASS] VPP routes module imported")
 
-        scenario = market_gen.generate_scenario(
-            system_size_kwp=3.5,
-            daily_load_kwh=12.0,
-            volatility_multiplier=1.5,
-            cloud_cover_factor=0.3
-        )
-
-        if scenario and scenario.price_data_source == "synthetic":
-            print(f"✅ Synthetic fallback working correctly")
-            return True
+        # Check router exists
+        if hasattr(vpp, 'router'):
+            print("[PASS] VPP router exists")
         else:
-            print(f"❌ Synthetic fallback failed")
+            print("[FAIL] VPP router not found")
             return False
 
+        # Check endpoints
+        routes = [r.path for r in vpp.router.routes]
+        expected = ['/optimize', '/simulate', '/benchmark', '/health']
+
+        for endpoint in expected:
+            if endpoint in routes:
+                print(f"[PASS] Endpoint exists: {endpoint}")
+            else:
+                print(f"[FAIL] Endpoint missing: {endpoint}")
+                return False
+
+        return True
+
     except Exception as e:
-        print(f"❌ Synthetic fallback error: {e}")
+        print(f"[FAIL] Error: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 
-def main():
-    """Run integration tests."""
-    success = test_live_data_integration()
-
+def test_models():
+    """Test that Pydantic models are properly defined."""
     print("\n" + "="*70)
-    if success:
-        print("🎉 SUCCESS! Live data integration is working!")
-        print("\nYou can now run your SolarPal app:")
-        print("   streamlit run app.py")
-        print("\nMake sure to:")
-        print("   1. Check 'Use Live UK Prices (Octopus Agile)'")
-        print("   2. Select your region")
-        print("   3. Click 'RUN OPTIMIZATION'")
+    print("TEST 3: Pydantic Models")
+    print("="*70)
+
+    try:
+        # Ensure backend is in path
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from models import VPPOptimizationRequest
+
+        print("[PASS] All VPP models imported")
+
+        # Test model instantiation
+        request = VPPOptimizationRequest(
+            solar_forecast_kw=[0.5] * 96,
+            battery_capacity_kwh=13.5
+        )
+        print("[PASS] VPPOptimizationRequest model instantiated")
+
+        return True
+
+    except Exception as e:
+        print(f"[FAIL] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def test_main_integration():
+    """Test that VPP is integrated in main.py."""
+    print("\n" + "="*70)
+    print("TEST 4: Main App Integration")
+    print("="*70)
+
+    try:
+        # FIX: Add current directory (backend) to path so we can find main.py
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        if current_dir not in sys.path:
+            sys.path.insert(0, current_dir)
+
+        from main import app
+
+        # Check VPP router is included
+        routes = [r.path for r in app.routes]
+        vpp_routes = [r for r in routes if r.startswith('/vpp')]
+
+        if len(vpp_routes) > 0:
+            print(f"[PASS] Found {len(vpp_routes)} VPP routes in main app")
+            return True
+        else:
+            print("[FAIL] No VPP routes found in main app")
+            return False
+
+    except ImportError as e:
+        print(f"[FAIL] Import Error: {e}")
+        print(f"Debug: Current sys.path: {sys.path}")
+        return False
+    except Exception as e:
+        print(f"[FAIL] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def run_all_tests():
+    """Run complete test suite."""
+    print("\n" + "="*70)
+    print(" VPP INTEGRATION TEST SUITE ".center(70, "="))
+    print("="*70)
+
+    tests = [
+        ("VPP Engine", test_vpp_engine),
+        ("API Routes", test_api_routes),
+        ("Pydantic Models", test_models),
+        ("Main Integration", test_main_integration)
+    ]
+
+    results = []
+    for name, test_func in tests:
+        passed = test_func()
+        results.append((name, passed))
+
+    # Summary
+    print("\n" + "="*70)
+    print("TEST SUMMARY")
+    print("="*70)
+
+    passed_count = sum(1 for _, passed in results if passed)
+    total = len(results)
+
+    for name, passed in results:
+        status = "[PASS]" if passed else "[FAIL]"
+        print(f"{status} {name}")
+
+    print("="*70)
+    print(f"Results: {passed_count}/{total} tests passed")
+
+    if passed_count == total:
+        print("\n[SUCCESS] All tests passed! Your VPP is ready to use.")
+        return 0
     else:
-        print("⚠️  Some tests failed. Check errors above.")
-    print("="*70 + "\n")
+        print(f"\n[ERROR] {total - passed_count} test(s) failed")
+        return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(run_all_tests())
