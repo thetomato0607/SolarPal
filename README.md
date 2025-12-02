@@ -53,17 +53,22 @@ I formulated the problem not as a set of heuristics (if/else rules), but as a co
 
 Because this is a convex problem, the solver guarantees mathematical compliance with the grid limit while extracting the maximum possible profit.
 
+## Features & Architecture
+
+### 1. **The Market Engine** (Financial Optimization)
+- Algorithm: Uses scipy.optimize.linprog (HiGHS solver) for interior-point optimization.
+- Simulation: Generates realistic UK "Duck Curve" pricing, handling negative pricing events and evening scarcity peaks.
+- Metrics: Calculates Sharpe Ratio and risk-adjusted returns in real-time.
+
 ### 2. **Grid Engine** (Physical Constraints)
-- DNO G99 compliance checking
-- Voltage rise calculation (±10% limit)
-- Transformer thermal limits
-- Automatic violation detection
+- Physics Enforcement: Checks every proposed trade against DNO G99 connection limits (typically 4kW).
+- Safety Checks: Calculates voltage rise approximations and transformer thermal stress.
+- Automatic Curtailment: If a profitable trade would break the grid, the engine automatically curtails the power to the safe limit.
 
 ### 3. **Interactive Dashboard**
-- Dark-mode Bloomberg-style UI
-- Real-time optimization (< 0.5s solve time)
-- Configurable scenarios (volatility, cloud cover)
-- Professional Plotly visualizations
+- Built with Streamlit for a responsive, dark-mode financial terminal aesthetic.
+- Features interactive Plotly visualizations for analyzing price spreads and State of Charge (SoC).
+- Real-time solving (<0.5s) allows for rapid scenario testing (e.g., "What if price volatility doubles?").
 
 ---
 
@@ -125,25 +130,14 @@ The grid constraint is **mathematically guaranteed** by the LP solver.
 
 ```
 SolarPal/
-├── app.py                      # Main Streamlit dashboard
-├── .streamlit/
-│   └── config.toml             # Dark theme configuration
-├── modules/                    # Core optimization engines
-│   ├── optimization.py         # LP solver (BatteryOptimizer)
-│   ├── grid_physics.py         # Grid violation checker
-│   ├── market_data.py          # UK price/solar generator
-│   └── visualization.py        # Plotly chart builders
-├── backend/                    # Optional FastAPI (for API access)
-│   ├── vpp_engine.py
-│   ├── main.py
-│   └── routes/vpp.py
-├── docs/                       # Documentation
-│   ├── VPP_INTEGRATION_GUIDE.md
-│   ├── INTERVIEW_GUIDE.md
-│   └── PROJECT_RESTRUCTURE.md
-└── requirements.txt
-```
-
+├── app.py                  # Main Dashboard Entry Point
+├── modules/                # Core Logic Modules
+│   ├── optimization.py     # Linear Programming Solver (SciPy)
+│   ├── grid_physics.py     # Voltage & Thermal Physics
+│   ├── market_data.py      # Price & Load Generators
+│   └── visualization.py    # Plotly Charting
+├── docs/                   # Technical Documentation
+└── requirements.txt        # Dependencies
 ---
 
 ## Configuration
