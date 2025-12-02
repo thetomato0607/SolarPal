@@ -73,11 +73,12 @@ def test_2_fetch_current_prices():
     try:
         # Use the LATEST Agile tariff code
         region = 'A'  # Eastern England
-        tariff_code = f"E-1R-AGILE-FLEX-22-11-25-{region}"
-        
+        product_code = "AGILE-24-10-01"  # Updated to current tariff
+        tariff_code = f"E-1R-{product_code}-{region}"
+
         url = (
             f"https://api.octopus.energy/v1/products/"
-            f"AGILE-FLEX-22-11-25/electricity-tariffs/"
+            f"{product_code}/electricity-tariffs/"
             f"{tariff_code}/standard-unit-rates/"
         )
         
@@ -156,11 +157,12 @@ def test_3_fetch_24h_forecast():
     
     try:
         region = 'A'
-        tariff_code = f"E-1R-AGILE-FLEX-22-11-25-{region}"
-        
+        product_code = "AGILE-24-10-01"  # Updated to current tariff
+        tariff_code = f"E-1R-{product_code}-{region}"
+
         url = (
             f"https://api.octopus.energy/v1/products/"
-            f"AGILE-FLEX-22-11-25/electricity-tariffs/"
+            f"{product_code}/electricity-tariffs/"
             f"{tariff_code}/standard-unit-rates/"
         )
         
@@ -182,7 +184,7 @@ def test_3_fetch_24h_forecast():
             data = response.json()
             results = list(reversed(data.get('results', [])))  # Oldest first
             
-            print(f"\n✅ Fetched {len(results)} half-hourly prices")
+            print(f"\n Fetched {len(results)} half-hourly prices")
             
             if len(results) >= 48:  # 48 half-hours = 24 hours
                 # Convert to 15-min intervals (duplicate each)
@@ -205,7 +207,7 @@ def test_3_fetch_24h_forecast():
                 expensive_threshold = np.percentile(prices_array, 90)
                 expensive_times = np.where(prices_array >= expensive_threshold)[0]
                 
-                print(f"\n💡 Trading Opportunities:")
+                print(f"\n Trading Opportunities:")
                 print(f"   Charge when price < £{cheap_threshold:.4f}/kWh")
                 print(f"   Discharge when price > £{expensive_threshold:.4f}/kWh")
                 print(f"   Potential spread: £{expensive_threshold - cheap_threshold:.4f}/kWh")
@@ -215,7 +217,7 @@ def test_3_fetch_24h_forecast():
                 cycles_per_day = 1
                 arbitrage_profit = (expensive_threshold - cheap_threshold) * battery_capacity * cycles_per_day
                 
-                print(f"\n💰 Daily Arbitrage Potential:")
+                print(f"\n Daily Arbitrage Potential:")
                 print(f"   Battery: {battery_capacity} kWh")
                 print(f"   Spread: £{expensive_threshold - cheap_threshold:.4f}/kWh")
                 print(f"   Profit: £{arbitrage_profit:.2f}/day (1 cycle)")
@@ -223,7 +225,7 @@ def test_3_fetch_24h_forecast():
                 
                 return True
             else:
-                print(f"\n⚠️  Only {len(results)} prices available (need 48 for 24h)")
+                print(f"\n  Only {len(results)} prices available (need 48 for 24h)")
                 return False
                 
         else:
@@ -265,11 +267,13 @@ def test_4_all_regions():
     available = []
     unavailable = []
     
+    product_code = "AGILE-24-10-01"  # Updated to current tariff
+
     for code, name in regions.items():
-        tariff_code = f"E-1R-AGILE-FLEX-22-11-25-{code}"
+        tariff_code = f"E-1R-{product_code}-{code}"
         url = (
             f"https://api.octopus.energy/v1/products/"
-            f"AGILE-FLEX-22-11-25/electricity-tariffs/"
+            f"{product_code}/electricity-tariffs/"
             f"{tariff_code}/standard-unit-rates/"
         )
         
@@ -277,20 +281,20 @@ def test_4_all_regions():
             response = requests.get(url, params={'page_size': 1}, timeout=5)
             if response.status_code == 200:
                 available.append((code, name))
-                print(f"  ✅ {code}: {name}")
+                print(f"   {code}: {name}")
             else:
                 unavailable.append((code, name))
-                print(f"  ❌ {code}: {name} (not available)")
+                print(f"   {code}: {name} (not available)")
         except:
             unavailable.append((code, name))
-            print(f"  ⚠️  {code}: {name} (timeout)")
+            print(f"    {code}: {name} (timeout)")
     
     print(f"\n📊 Summary:")
     print(f"   Available: {len(available)} regions")
     print(f"   Unavailable: {len(unavailable)} regions")
     
     if available:
-        print(f"\n💡 Recommended regions for testing:")
+        print(f"\n Recommended regions for testing:")
         for code, name in available[:3]:
             print(f"   - {code}: {name}")
     
@@ -323,24 +327,24 @@ def main():
     total = len(results)
     
     for test_name, result in results.items():
-        status = "✅ PASS" if result else "❌ FAIL"
+        status = " PASS" if result else "❌ FAIL"
         print(f"{status} - {test_name}")
     
     print("="*70)
     print(f"Results: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n🎉 SUCCESS! Octopus Energy API is working perfectly.")
+        print("\n SUCCESS! Octopus Energy API is working perfectly.")
         print("\nYou can now integrate this into your VPP Trading Terminal:")
         print("  1. Copy live_data.py to modules/")
         print("  2. Update market_data.py with enhanced version")
         print("  3. Add integration code to app.py")
         print("  4. Run: streamlit run app.py")
     elif passed > 0:
-        print("\n⚠️  PARTIAL SUCCESS. Some tests passed.")
+        print("\n  PARTIAL SUCCESS. Some tests passed.")
         print("Check error messages above for details.")
     else:
-        print("\n❌ ALL TESTS FAILED")
+        print("\n ALL TESTS FAILED")
         print("Possible issues:")
         print("  - No internet connection")
         print("  - Octopus API is down")

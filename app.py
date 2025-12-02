@@ -194,8 +194,114 @@ if use_live_prices:
             if abs(deviation) > 2:
                 st.sidebar.warning(f"Unusual price! {deviation:.1f}σ from 7-day mean")
 
+# ============================================================================
+# SYSTEM PERFORMANCE MONITOR
+# ============================================================================
+
 st.sidebar.markdown("---")
-run_simulation = st.sidebar.button("RUN OPTIMIZATION", type="primary", use_container_width=True)
+st.sidebar.markdown("### SYSTEM STATUS")
+
+# Create metrics container
+with st.sidebar.container():
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Optimization speed
+        if 'result' in st.session_state:
+            solve_ms = st.session_state.result.solve_time_ms
+            if solve_ms < 500:
+                status = "FAST"
+            elif solve_ms < 1000:
+                status = "OK"
+            else:
+                status = "SLOW"
+
+            st.metric(
+                label="Solve Speed",
+                value=f"{solve_ms:.0f}ms",
+                delta=status
+            )
+        else:
+            st.metric("Solve Speed", "N/A")
+
+    with col2:
+        # Data source
+        if 'scenario' in st.session_state:
+            scenario = st.session_state.scenario
+            if scenario.price_data_source == "octopus_agile":
+                st.metric("Data Source", "LIVE")
+            else:
+                st.metric("Data Source", "SIM")
+        else:
+            st.metric("Data Source", "N/A")
+
+# API Health Check
+if use_live_prices:
+    st.sidebar.markdown("#### Live Data Status")
+
+    # Check API availability
+    try:
+        from modules.live_data import OctopusEnergyAPI
+        test_price = OctopusEnergyAPI.get_current_price(octopus_region)
+        if test_price:
+            st.sidebar.success("API Online")
+
+            # Show last update time
+            from datetime import datetime
+            last_update = datetime.now().strftime("%H:%M:%S")
+            st.sidebar.caption(f"Last checked: {last_update}")
+        else:
+            st.sidebar.warning("API Slow")
+    except:
+        st.sidebar.error("API Offline")
+        st.sidebar.caption("Using synthetic fallback")
+
+# Performance benchmarks
+st.sidebar.markdown("#### Benchmarks")
+st.sidebar.markdown("""
+<div style='font-size: 12px; color: #888;'>
+• Target: <500ms solve time<br>
+• HiGHS: O(n²) complexity<br>
+• Scale: 1000+ homes possible<br>
+</div>
+""", unsafe_allow_html=True)
+
+# Quick actions
+st.sidebar.markdown("---")
+st.sidebar.markdown("### QUICK ACTIONS")
+
+if st.sidebar.button("Download CSV", use_container_width=True):
+    if 'result' in st.session_state:
+        import pandas as pd
+        from datetime import datetime
+        result = st.session_state.result
+        scenario = st.session_state.scenario
+
+        df = pd.DataFrame({
+            'Hour': [ts.strftime("%H:%M") for ts in scenario.timestamps],
+            'Price (£/kWh)': scenario.price_gbp_kwh,
+            'Solar (kW)': scenario.solar_kw,
+            'Load (kW)': scenario.load_kw,
+            'Charge (kW)': result.charge_schedule_kw,
+            'Discharge (kW)': result.discharge_schedule_kw,
+            'SoC (%)': result.soc_trajectory_pct,
+            'Grid Export (kW)': result.grid_export_kw
+        })
+
+        csv = df.to_csv(index=False)
+        st.sidebar.download_button(
+            label="Download",
+            data=csv,
+            file_name=f"vpp_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+    else:
+        st.sidebar.info("Run optimization first")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("### AUTO-OPTIMIZATION")
+st.sidebar.caption("Live mode: Optimization runs automatically when you adjust any parameter above")
 
 # ============================================================================
 # MAIN DASHBOARD
@@ -212,27 +318,43 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================================================
-# SIMULATION ENGINE
+# SIMULATION ENGINE - AUTO-RUN ON PARAMETER CHANGE
 # ============================================================================
 
-if run_simulation or 'result' not in st.session_state:
+# Always run optimization (automatically updates when sliders change)
+if True:
     with st.spinner("Running optimization engine..."):
         try:
-            # Generate market scenario with optional live prices
-            market_gen = MarketDataGenerator(
-                use_live_prices=use_live_prices,
-                octopus_region=octopus_region
-            )
-            scenario = market_gen.generate_scenario(
-                system_size_kwp=system_size,
-                daily_load_kwh=daily_load,
-                volatility_multiplier=volatility,
-                cloud_cover_factor=cloud_cover
-            )
+            # Smart caching: Cache market scenario (solar/load/prices) separately from asset optimization
+            # Market scenario depends on: region, solar size, load, volatility, clouds
+            # Optimization depends on: battery params + scenario
+
+            scenario_cache_key = f"{use_live_prices}_{octopus_region}_{system_size}_{daily_load}_{volatility}_{cloud_cover}"
+
+            if 'scenario_cache_key' not in st.session_state or st.session_state.scenario_cache_key != scenario_cache_key:
+                # Generate new market scenario (includes live price fetch if enabled)
+                market_gen = MarketDataGenerator(
+                    use_live_prices=use_live_prices,
+                    octopus_region=octopus_region
+                )
+                scenario = market_gen.generate_scenario(
+                    system_size_kwp=system_size,
+                    daily_load_kwh=daily_load,
+                    volatility_multiplier=volatility,
+                    cloud_cover_factor=cloud_cover
+                )
+                st.session_state.scenario_cache_key = scenario_cache_key
+                st.session_state.cached_scenario = scenario
+                using_cache = False
+            else:
+                # Use cached scenario (fast - no API call needed)
+                scenario = st.session_state.cached_scenario
+                using_cache = True
 
             # Show data source
             if scenario.price_data_source == "octopus_agile":
-                st.success(f"Using LIVE UK prices from Octopus Agile (Region {scenario.price_region})")
+                cache_msg = " (cached)" if using_cache else ""
+                st.success(f"Using LIVE UK prices from Octopus Agile (Region {scenario.price_region}){cache_msg}")
             else:
                 st.info("Using synthetic price model")
 

@@ -4,7 +4,10 @@
       "Bash(python:*)",
       "Bash(pip install:*)",
       "Bash(del:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(chcp 6500)",
+      "Bash(set:*)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

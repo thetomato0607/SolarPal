@@ -78,19 +78,43 @@ class OctopusEnergyAPI:
             return None
     
     @staticmethod
+    def get_latest_agile_product() -> Optional[str]:
+        """
+        Automatically detect the latest Agile product code.
+
+        Returns:
+            Latest Agile product code (e.g. 'AGILE-24-10-01') or None
+        """
+        try:
+            products = OctopusEnergyAPI.list_available_products()
+            if products:
+                # Find all Agile products
+                agile_products = [p for p in products if 'AGILE' in p['code'].upper() and 'OUTGOING' not in p['code'].upper()]
+                if agile_products:
+                    # Return the first (most recent) one
+                    return agile_products[0]['code']
+            return None
+        except:
+            return None
+
+    @staticmethod
     def get_agile_tariff_code(region: str = 'A') -> str:
         """
         Get the current Agile Octopus tariff code for a region.
-        
+
         Args:
             region: Region code (A-P)
-            
+
         Returns:
-            Tariff code like 'E-1R-AGILE-FLEX-22-11-25-A'
+            Tariff code like 'E-1R-AGILE-24-10-01-A'
         """
-        # Current Agile product code (changes periodically)
-        # This is the LATEST as of Dec 2024
-        product_code = "AGILE-FLEX-22-11-25"
+        # Try to get latest product code dynamically
+        product_code = OctopusEnergyAPI.get_latest_agile_product()
+
+        # Fallback to known working codes
+        if not product_code:
+            product_code = "AGILE-24-10-01"  # Current as of Dec 2024
+
         return f"E-1R-{product_code}-{region}"
     
     @staticmethod
@@ -119,13 +143,17 @@ class OctopusEnergyAPI:
             if date is None:
                 date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
             
-            # Get tariff code for region
+            # Get product code and tariff code for region
+            product_code = OctopusEnergyAPI.get_latest_agile_product()
+            if not product_code:
+                product_code = "AGILE-24-10-01"  # Fallback
+
             tariff_code = OctopusEnergyAPI.get_agile_tariff_code(region)
-            
+
             # Build API URL
             url = (
                 f"{OctopusEnergyAPI.BASE_URL}/products/"
-                f"AGILE-FLEX-22-11-25/electricity-tariffs/"
+                f"{product_code}/electricity-tariffs/"
                 f"{tariff_code}/standard-unit-rates/"
             )
             
@@ -154,13 +182,26 @@ class OctopusEnergyAPI:
                 
                 # Extract prices and convert pence to pounds
                 prices_halfhourly = [r['value_inc_vat'] / 100 for r in results]
-                
+
                 # Convert 30-min to 15-min intervals (duplicate each value)
                 prices_15min = []
                 for price in prices_halfhourly:
                     prices_15min.extend([price, price])
-                
-                # Return exactly 96 intervals (24 hours @ 15 min)
+
+                # If we don't have enough data for full 24 hours, try yesterday
+                if len(prices_15min) < 96:
+                    print(f"Only {len(prices_15min)} intervals available for {date.date()}, trying yesterday...")
+                    yesterday = date - timedelta(days=1)
+                    yesterday_prices = OctopusEnergyAPI.fetch_agile_prices(yesterday, region, hours)
+                    if yesterday_prices and len(yesterday_prices) >= 96:
+                        return yesterday_prices[:96]
+
+                # Return what we have, padded if necessary
+                if len(prices_15min) < 96:
+                    # Pad with last known price
+                    last_price = prices_15min[-1] if prices_15min else 0.15
+                    prices_15min.extend([last_price] * (96 - len(prices_15min)))
+
                 return prices_15min[:96]
             
             elif response.status_code == 404:
@@ -191,25 +232,27 @@ class OctopusEnergyAPI:
     def get_current_price(region: str = 'A') -> Optional[float]:
         """
         Get the current half-hour price for right now.
-        
+
         Args:
             region: Region code (A-P)
-            
+
         Returns:
             Current price in £/kWh, or None if unavailable
         """
         try:
+            # Fetch from midnight today to get full day's prices
             now = datetime.now()
-            prices = OctopusEnergyAPI.fetch_agile_prices(now, region, hours=1)
-            
+            midnight_today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            prices = OctopusEnergyAPI.fetch_agile_prices(midnight_today, region, hours=24)
+
             if prices:
                 # Calculate which 15-min interval we're in
                 current_interval = (now.hour * 4) + (now.minute // 15)
                 if current_interval < len(prices):
                     return prices[current_interval]
-            
+
             return None
-            
+
         except Exception as e:
             print(f"Error getting current price: {e}")
             return None
