@@ -43,12 +43,13 @@ A naive algorithm sees a high price at 6 PM and discharges 5kW of power. But if 
 - Result: Voltage rise > 10%, potential equipment damage, and heavy fines.
 #### The Solution: Linear Programming
 I formulated the problem not as a set of heuristics (if/else rules), but as a constrained optimization problem. The solver finds the global optimum that satisfies all physical constraints simultaneously.
-- Objective: Maximize Revenue = Sum(Grid_Export * Price * dt)
+- Objective:
+      Maximize Revenue = Sum(Grid_Export * Price * dt)
 
 - Subject to hard constraints:
-Capacity: Battery cannot be empty or overcharged (0% <= SoC <= 100%).
-Power: Inverter cannot exceed rating (+/- 5kW).
-The "Golden Rule": Net_Export <= 4.0 kW.
+    1. Capacity: Battery cannot be empty or overcharged (0% <= SoC <= 100%).
+    2. Power: Inverter cannot exceed rating (+/- 5kW).
+    3. The "Golden Rule": Net_Export <= 4.0 kW.
 
 Because this is a convex problem, the solver guarantees mathematical compliance with the grid limit while extracting the maximum possible profit.
 
