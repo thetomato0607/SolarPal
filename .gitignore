@@ -6,3 +6,5 @@ dist/
 __pycache__/
 *.pyc
 Tools/Heat pump visualizer.docx
+
+INTERVIEW_GUIDE.md
