@@ -8,7 +8,6 @@ Bloomberg-style dashboard for grid-connected battery optimization.
 """
 
 import streamlit as st
-import numpy as np
 from dataclasses import asdict
 from modules.optimization import BatteryOptimizer, BatteryAsset, calculate_baseline_cost
 from modules.grid_physics import GridConstraintChecker
@@ -101,6 +100,24 @@ initial_soc = st.sidebar.slider(
 st.sidebar.markdown("---")
 st.sidebar.markdown("### MARKET PARAMETERS")
 
+# Live price toggle
+use_live_prices = st.sidebar.checkbox(
+    "Use Live UK Prices (Octopus Agile)",
+    value=False,
+    help="Fetch real UK electricity prices from Octopus Energy API"
+)
+
+if use_live_prices:
+    octopus_region = st.sidebar.selectbox(
+        "Region",
+        options=['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P'],
+        index=0,
+        help="A=Eastern England, C=South West, etc."
+    )
+    st.sidebar.info("Fetching live prices from Octopus Energy...")
+else:
+    octopus_region = 'A'
+
 system_size = st.sidebar.slider(
     "Solar System Size (kWp)",
     min_value=1.0,
@@ -115,7 +132,7 @@ volatility = st.sidebar.slider(
     max_value=5.0,
     value=1.5,
     step=0.5,
-    help="1x = normal, 5x = extreme market conditions"
+    help="1x = normal, 5x = extreme market conditions (synthetic only)"
 )
 
 cloud_cover = st.sidebar.slider(
@@ -134,6 +151,48 @@ daily_load = st.sidebar.slider(
     value=12.0,
     step=1.0
 )
+
+# Price alert threshold
+alert_threshold = st.sidebar.slider(
+    "Low Price Alert (£/kWh)",
+    min_value=0.0,
+    max_value=0.10,
+    value=0.03,
+    step=0.01,
+    help="Alert when electricity price drops below this"
+)
+
+st.sidebar.markdown("---")
+
+# Show live price if available
+if use_live_prices:
+    from modules.live_data import OctopusEnergyAPI
+    from datetime import datetime as dt
+
+    current_price = OctopusEnergyAPI.get_current_price(octopus_region)
+
+    if current_price:
+        # Color code based on price
+        if current_price < alert_threshold:
+            st.sidebar.success(f"CHEAP POWER ALERT! £{current_price:.4f}/kWh")
+        elif current_price < 0.05:
+            st.sidebar.info(f"Current Price: £{current_price:.4f}/kWh")
+        elif current_price < 0.10:
+            st.sidebar.warning(f"Current Price: £{current_price:.4f}/kWh")
+        else:
+            st.sidebar.error(f"HIGH PRICE: £{current_price:.4f}/kWh")
+
+        # Peak pricing warning
+        hour = dt.now().hour
+        if 17 <= hour <= 20:
+            st.sidebar.warning("Peak pricing period (5pm-8pm)")
+
+        # Show statistics
+        stats = OctopusEnergyAPI.get_price_statistics(octopus_region, days=7)
+        if stats:
+            deviation = (current_price - stats['mean_gbp_kwh']) / stats['std_gbp_kwh']
+            if abs(deviation) > 2:
+                st.sidebar.warning(f"Unusual price! {deviation:.1f}σ from 7-day mean")
 
 st.sidebar.markdown("---")
 run_simulation = st.sidebar.button("RUN OPTIMIZATION", type="primary", use_container_width=True)
@@ -159,14 +218,23 @@ st.markdown("""
 if run_simulation or 'result' not in st.session_state:
     with st.spinner("Running optimization engine..."):
         try:
-            # Generate market scenario
-            market_gen = MarketDataGenerator()
+            # Generate market scenario with optional live prices
+            market_gen = MarketDataGenerator(
+                use_live_prices=use_live_prices,
+                octopus_region=octopus_region
+            )
             scenario = market_gen.generate_scenario(
                 system_size_kwp=system_size,
                 daily_load_kwh=daily_load,
                 volatility_multiplier=volatility,
                 cloud_cover_factor=cloud_cover
             )
+
+            # Show data source
+            if scenario.price_data_source == "octopus_agile":
+                st.success(f"Using LIVE UK prices from Octopus Agile (Region {scenario.price_region})")
+            else:
+                st.info("Using synthetic price model")
 
             # Run optimization
             asset = BatteryAsset(

@@ -50,21 +50,26 @@ class MarketDataGenerator:
     """
 
     def __init__(
-        self, 
-        seed: int = 42, 
+        self,
+        seed: int = None,
         use_live_prices: bool = False,
         octopus_region: str = 'A'
     ):
         """
         Args:
-            seed: Random seed for reproducibility
+            seed: Random seed for reproducibility (None = random, 42 = fixed for testing)
             use_live_prices: If True, fetch real UK prices from Octopus API
             octopus_region: UK region code (A-P) for Agile pricing
         """
-        self.seed = seed
+        # Use None for truly random, or provide a seed for reproducibility
+        if seed is None:
+            self.seed = np.random.randint(0, 1000000)
+        else:
+            self.seed = seed
+
         self.use_live_prices = use_live_prices
         self.octopus_region = octopus_region
-        np.random.seed(seed)
+        np.random.seed(self.seed)
 
     def generate_scenario(
         self,
