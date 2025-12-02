@@ -194,7 +194,6 @@ Battery Benefit:         +£2.20/day
 ### For Students/Portfolio:
 - Demonstrates professional-grade optimization
 - Shows understanding of power systems constraints
-- Interview-ready talking points (see [INTERVIEW_GUIDE.md](docs/INTERVIEW_GUIDE.md))
 
 ### For Researchers:
 - Extensible framework for VPP studies
