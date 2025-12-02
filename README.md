@@ -1,34 +1,32 @@
 # VPP Trading Terminal
 
-> **Professional Virtual Power Plant simulation platform for grid-connected battery arbitrage**
+> **A professional Virtual Power Plant (VPP) simulation platform that balances economic optimization with physical grid constraints.**
 
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-FF4B4B.svg)](https://streamlit.io)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ---
 
-## What This Is
+## The Concept
 
-A **Bloomberg-terminal style** energy trading dashboard that optimizes residential battery systems for maximum profit while respecting physical grid constraints.
+If you simply program a battery to "buy low and sell high," you risk overloading the local transformer.
 
-**Target Audience:** Quantitative traders, grid engineers, energy market analysts
+This project bridges the gap between **Quantitative Finance** and **Power Systems Engineering**. It is a Bloomberg-style trading dashboard that uses **Linear Programming (LP)** to optimize residential battery schedules against volatile UK electricity prices, while strictly enforcing DNO G99 grid constraints.
 
-**Key Innovation:** Uses **Linear Programming** to mathematically guarantee grid compliance while maximizing arbitrage revenue—no heuristics, no guesswork.
+**The result?** A trading strategy that maximizes arbitrage revenue without ever violating physical voltage limits.
 
 ---
 
 ## Quick Start
 
-### Installation
-
+### 1. Installation
 ```bash
-git clone https://github.com/yourusername/SolarPal.git
+git clone [https://github.com/thetomato0607/SolarPal.git](https://github.com/thetomato0607/SolarPal.git)
 cd SolarPal
 pip install -r requirements.txt
-```
 
-### Run the Dashboard
+### 2. Run the Dashboard
 
 ```bash
 streamlit run app.py
@@ -38,25 +36,39 @@ streamlit run app.py
 
 ---
 
-## Features
+## The Engineering Logic
 
-### 1. **Market Engine** (Financial Optimization)
-- Linear Programming solver for battery arbitrage
-- Maximizes revenue through price-based charge/discharge
-- Realistic UK "duck curve" price simulation
-- Sharpe ratio and risk-adjusted returns
+### The Conflict: Profit vs. Physics
+A naive algorithm sees a high price at 6 PM and discharges 5kW of power. But if the household solar is also generating, the total export might hit 7kW.
+- Result: Voltage rise > 10%, potential equipment damage, and heavy fines.
+#### The Solution: Linear Programming
+I formulated the problem not as a set of heuristics (if/else rules), but as a constrained optimization problem. The solver finds the global optimum that satisfies all physical constraints simultaneously.
+- Objective:
+      Maximize Revenue = Sum(Grid_Export * Price * dt)
+
+- Subject to hard constraints:
+    1. Capacity: Battery cannot be empty or overcharged (0% <= SoC <= 100%).
+    2. Power: Inverter cannot exceed rating (+/- 5kW).
+    3. The "Golden Rule": Net_Export <= 4.0 kW.
+
+Because this is a convex problem, the solver guarantees mathematical compliance with the grid limit while extracting the maximum possible profit.
+
+## Features & Architecture
+
+### 1. **The Market Engine** (Financial Optimization)
+- Algorithm: Uses scipy.optimize.linprog (HiGHS solver) for interior-point optimization.
+- Simulation: Generates realistic UK "Duck Curve" pricing, handling negative pricing events and evening scarcity peaks.
+- Metrics: Calculates Sharpe Ratio and risk-adjusted returns in real-time.
 
 ### 2. **Grid Engine** (Physical Constraints)
-- DNO G99 compliance checking
-- Voltage rise calculation (±10% limit)
-- Transformer thermal limits
-- Automatic violation detection
+- Physics Enforcement: Checks every proposed trade against DNO G99 connection limits (typically 4kW).
+- Safety Checks: Calculates voltage rise approximations and transformer thermal stress.
+- Automatic Curtailment: If a profitable trade would break the grid, the engine automatically curtails the power to the safe limit.
 
 ### 3. **Interactive Dashboard**
-- Dark-mode Bloomberg-style UI
-- Real-time optimization (< 0.5s solve time)
-- Configurable scenarios (volatility, cloud cover)
-- Professional Plotly visualizations
+- Built with Streamlit for a responsive, dark-mode financial terminal aesthetic.
+- Features interactive Plotly visualizations for analyzing price spreads and State of Charge (SoC).
+- Real-time solving (<0.5s) allows for rapid scenario testing (e.g., "What if price volatility doubles?").
 
 ---
 
@@ -118,25 +130,14 @@ The grid constraint is **mathematically guaranteed** by the LP solver.
 
 ```
 SolarPal/
-├── app.py                      # Main Streamlit dashboard
-├── .streamlit/
-│   └── config.toml             # Dark theme configuration
-├── modules/                    # Core optimization engines
-│   ├── optimization.py         # LP solver (BatteryOptimizer)
-│   ├── grid_physics.py         # Grid violation checker
-│   ├── market_data.py          # UK price/solar generator
-│   └── visualization.py        # Plotly chart builders
-├── backend/                    # Optional FastAPI (for API access)
-│   ├── vpp_engine.py
-│   ├── main.py
-│   └── routes/vpp.py
-├── docs/                       # Documentation
-│   ├── VPP_INTEGRATION_GUIDE.md
-│   ├── INTERVIEW_GUIDE.md
-│   └── PROJECT_RESTRUCTURE.md
-└── requirements.txt
-```
-
+├── app.py                  # Main Dashboard Entry Point
+├── modules/                # Core Logic Modules
+│   ├── optimization.py     # Linear Programming Solver (SciPy)
+│   ├── grid_physics.py     # Voltage & Thermal Physics
+│   ├── market_data.py      # Price & Load Generators
+│   └── visualization.py    # Plotly Charting
+├── docs/                   # Technical Documentation
+└── requirements.txt        # Dependencies
 ---
 
 ## Configuration
@@ -194,7 +195,6 @@ Battery Benefit:         +£2.20/day
 ### For Students/Portfolio:
 - Demonstrates professional-grade optimization
 - Shows understanding of power systems constraints
-- Interview-ready talking points (see [INTERVIEW_GUIDE.md](docs/INTERVIEW_GUIDE.md))
 
 ### For Researchers:
 - Extensible framework for VPP studies
